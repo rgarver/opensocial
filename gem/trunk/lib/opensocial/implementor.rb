@@ -7,7 +7,7 @@ module OpenSocial
     
     class Implementor
       attr_accessor :token
-      attr_accessor :login_method
+      attr_accessor :authorization
       attr_accessor :scope
       
       def initialize(scope)
@@ -15,10 +15,18 @@ module OpenSocial
       end
       
       def client_login(email, password)
-        resp = Net::HTTP.post_form(@scope, {:Email => email, :Passwd => password, 
-                        :source => OpenSocial::API::Source.to_s, :service => 'ot'})
+        auth_url = URI.parse('https://www.google.com/accounts/ClientLogin')
+        http = Net::HTTP.new(auth_url.host, auth_url.port)
+        post = Net::HTTP::Post.new(auth_url.path)
+        post.form_data = {:Email => email, :Passwd => password, 
+                          :source => OpenSocial::API::Source.to_s, :service => 'ot'}
+        http.use_ssl = true if auth_url.scheme == 'https'
+        resp = http.request(post)
+        
+        return false if resp.code != '200'
+        
         @token = resp.body.split("\n").last
-        @login_method = "GoogleLogin"
+        @authorization = "GoogleLogin auth=#{@token}"
       end
       
       def authsub_proxy(next_addr, opts)
@@ -31,11 +39,24 @@ module OpenSocial
       end
       
       def get(path_ext)
-        Net::HTTP.get_response(@scope + path_ext)
+        req = Net::HTTP::Get.new(@scope.path + path_ext)
+        connection.start do |conn|
+          req['Authorization'] = @authorization
+          conn.request(req)
+        end
       end
       
       def people
         @people ||= OpenSocial::API::People.new(self)
+      end
+      
+    protected
+      def connection
+        return @connection if defined?(@connection)
+        
+        returning(@connection = Net::HTTP.new(@scope.host, @scope.port)) do |http|
+          http.use_ssl = true if @scope.scheme == 'https'
+        end
       end
     end
   end

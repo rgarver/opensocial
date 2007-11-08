@@ -4,12 +4,16 @@ class TestPeople < Test::Unit::TestCase
   def setup
     @url = 'https://orkut.com/feeds/'
     @implementor = OpenSocial::API::Implementor.new(@url)
-    @implementor.token = 'token'
-    @implementor.login_method = 'GoogleLogin'
+    @implementor.token = @token = 'token'
+    @implementor.authorization = @authorization = 'GoogleLogin auth=#{@token}'
   end
   
   def test_get_me
-    Net::HTTP.any_instance.expects(:request_get).with('/feeds/people/me').returns(fixture_as_httpresponse('person.xml'))
+    get_req = Net::HTTP::Get.new('/feeds/people/me')
+    Net::HTTP::Get.expects(:new).with('/feeds/people/me').returns(get_req)
+    Net::HTTP.any_instance.expects(:use_ssl=).with(true)
+    Net::HTTP.any_instance.expects(:request).with{|req| req['Authorization'] == @authorization}.
+                  returns(fixture_as_httpresponse('person.xml'))
     myself = @implementor.people.find(:me)
     
     assert_equal 'http://sandbox.orkut.com:80/feeds/people/14358878523263729569', myself.id

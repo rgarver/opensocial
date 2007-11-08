@@ -2,6 +2,7 @@ require 'test/unit'
 require 'rubygems'
 require 'cgi'
 require 'mocha'
+require 'pp'
 require File.dirname(__FILE__) + '/../lib/opensocial'
 
 class Test::Unit::TestCase

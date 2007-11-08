@@ -14,19 +14,40 @@ class TestAuthentication < Test::Unit::TestCase
     assert_equal 'ELCTechnologies-Testing-1', OpenSocial::API::Source.to_s
   end
   
-  def test_client_login_authentication
-    # http_request = stub(:basic_auth => true, :request => stub(:body => ''))
-    # http_stub = stub(:get => http_request)
-    # Net::HTTP.stubs(:start).yields(http_stub)
+  def test_client_login_authentication_success
     Net::HTTP::Post.any_instance.expects(:form_data=).with({:Email => @username, :Passwd => @password, 
       :source => 'ELCTechnologies-Testing-1', :service => 'ot'})
-    response = stub(:code => 200, :body => "SID\nLSID\nAUTH")
-    Net::HTTP.any_instance.stubs(:request).returns(response)
+    response = stub(:code => '200', :body => "SID\nLSID\nAUTH")
+    google_http = Net::HTTP.new('www.google.com', 443)
+    google_http.expects(:use_ssl=).with(true)
+    Net::HTTP.expects(:new).with('www.google.com', 443).returns(google_http)
+    Net::HTTP.any_instance.expects(:request).with do |req|
+      req.path == '/accounts/ClientLogin' && 
+      req.method == 'POST'
+    end.returns(response)
     
     impl = OpenSocial::API::Implementor.new(@url)
-    impl.client_login(@username, @password)
-    assert_equal 'AUTH', impl.token
-    assert_equal 'GoogleLogin', impl.login_method
+    
+    assert impl.client_login(@username, @password)
+    assert_equal 'GoogleLogin auth=AUTH', impl.authorization
+  end
+  
+  def test_client_login_authentication_failure
+    Net::HTTP::Post.any_instance.expects(:form_data=).with({:Email => @username, :Passwd => @password, 
+      :source => 'ELCTechnologies-Testing-1', :service => 'ot'})
+    response = stub(:code => '403', :body => "Error=BadAuthentication")
+    google_http = Net::HTTP.new('www.google.com', 443)
+    google_http.expects(:use_ssl=).with(true)
+    Net::HTTP.expects(:new).with('www.google.com', 443).returns(google_http)
+    Net::HTTP.any_instance.expects(:request).with do |req|
+      req.path == '/accounts/ClientLogin' && 
+      req.method == 'POST'
+    end.returns(response)
+    
+    impl = OpenSocial::API::Implementor.new(@url)
+    
+    assert !impl.client_login(@username, @password)
+    assert_nil impl.authorization
   end
   
   def test_authsub_proxy_authentication
@@ -44,4 +65,8 @@ class TestAuthentication < Test::Unit::TestCase
   # person = orkut.people.find(:me) # => OpenSocial::Person
   #  person.friends # => [OpenSocial::Person]
   #  person.activities # => [OpenSocial::Activities]
+  
+  # socket = StringIO.new("HTTP/1.1 200 OK\n\nSID\nLSID\nAUTH")
+  # TCPSocket.stubs(:open).returns(socket)
+  # OpenSSL::SSL::SSLSocket.stubs(:new).returns(socket)
 end
