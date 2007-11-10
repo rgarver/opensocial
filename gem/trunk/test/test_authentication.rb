@@ -16,8 +16,8 @@ class TestAuthentication < Test::Unit::TestCase
   
   def test_client_login_authentication_success
     Net::HTTP::Post.any_instance.expects(:form_data=).with({:Email => @username, :Passwd => @password, 
-      :source => 'ELCTechnologies-Testing-1', :service => 'ot'})
-    response = stub(:code => '200', :body => "SID\nLSID\nAUTH")
+      :source => 'ELCTechnologies-Testing-1', :service => 'ot', :accountType => 'HOSTED_OR_GOOGLE'})
+    response = stub(:code => '200', :body => "SID=SIDTOKEN\nLSID=LSIDTOKEN\nAuth=AUTHTOKEN")
     google_http = Net::HTTP.new('www.google.com', 443)
     google_http.expects(:use_ssl=).with(true)
     Net::HTTP.expects(:new).with('www.google.com', 443).returns(google_http)
@@ -29,12 +29,12 @@ class TestAuthentication < Test::Unit::TestCase
     impl = OpenSocial::API::Implementor.new(@url)
     
     assert impl.client_login(@username, @password)
-    assert_equal 'GoogleLogin auth=AUTH', impl.authorization
+    assert_equal 'GoogleLogin auth=AUTHTOKEN', impl.authorization
   end
   
   def test_client_login_authentication_failure
     Net::HTTP::Post.any_instance.expects(:form_data=).with({:Email => @username, :Passwd => @password, 
-      :source => 'ELCTechnologies-Testing-1', :service => 'ot'})
+      :source => 'ELCTechnologies-Testing-1', :service => 'ot', :accountType => 'HOSTED_OR_GOOGLE'})
     response = stub(:code => '403', :body => "Error=BadAuthentication")
     google_http = Net::HTTP.new('www.google.com', 443)
     google_http.expects(:use_ssl=).with(true)
@@ -48,6 +48,7 @@ class TestAuthentication < Test::Unit::TestCase
     
     assert !impl.client_login(@username, @password)
     assert_nil impl.authorization
+    assert_equal 'BadAuthentication', impl.error['Error']
   end
   
   def test_authsub_proxy_authentication
