@@ -1,0 +1,1 @@
+require 'opensocial_container'
