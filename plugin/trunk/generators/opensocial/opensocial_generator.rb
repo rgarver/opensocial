@@ -17,15 +17,15 @@ class OpensocialGenerator < Rails::Generator::Base
       m.template 'app.rb', 'app/models/feeds/app.rb'
       
       # Migrations
-      m.migration_template 'create_apps.rb', 'db/migrate'
+      m.migration_template 'create_apps.rb', 'db/migrate', :migration_file_name => 'create_apps'
       
       # Views
       %w(index edit new show).each do |action|
-        m.template "apps/#{action}.html.erb", "app/views/feeds/apps/#{action}.html.erb"
+        m.file "apps/#{action}.html.erb", "app/views/feeds/apps/#{action}.html.erb"
       end
       
       # Routes (need to look at adding support for namespace matching on this, fake it for now)
-      m.route_resouces :apps, :path_prefix => 'feeds', :name_prefix => 'feeds_', :namespace => 'feeds/'
+      # m.route_resources 'apps', :path_prefix => 'feeds', :name_prefix => 'feeds_', :namespace => 'feeds/'
     end
   end
   
