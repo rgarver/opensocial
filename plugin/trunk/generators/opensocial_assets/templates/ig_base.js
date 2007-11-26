@@ -44,6 +44,11 @@
  */
 opensocial.RailsContainer = function(baseUrl, opt_owner, opt_appId) {
   this._baseUrl = baseUrl;
+  this.people = {
+	'VIEWER': opt_owner,
+	'OWNER': opt_owner,
+  };
+  this.people[opt_owner.getId()] = opt_owner;
   this.viewer = opt_owner;
   this.owner = opt_owner;
   this.viewerFriends = {};
@@ -134,12 +139,11 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
     switch (request.type) {
       case 'FETCH_PERSON' :
         var personId = request.id;
-		if (personId == this.viewer.getId() || 
-			personId == opensocial.DataRequest.PersonId.VIEWER || 
-			personId == opensocial.DataRequest.PersonId.OWNER) {
+		if (this.people[personId]) {
 	        requestedValue = this.viewer;
 		} else {
 			// Request from server
+			// And then append to the people hash
 			hadError = true;
 			requestedValue = null;
 		}
