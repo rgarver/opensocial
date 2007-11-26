@@ -46,12 +46,12 @@ opensocial.RailsContainer = function(baseUrl, opt_owner, opt_appId) {
   this._baseUrl = baseUrl;
   this.viewer = opt_owner;
   this.owner = opt_owner;
-  // this.viewerFriends = opt_viewerFriends || {};
-  //   this.ownerFriends = opt_ownerFriends || {};
-  //   this.globalAppData = opt_globalAppData || {};
-  //   this.instanceAppData = opt_instanceAppData || {};
-  //   this.personAppData = opt_personAppData || {};
-  //   this.activities = opt_activities || {};
+  this.viewerFriends = {};
+  this.ownerFriends = {};
+  this.globalAppData = {};
+  this.instanceAppData = {};
+  this.personAppData = {};
+  this.activities = {};
   this.appId = opt_appId || 'sampleContainerAppId';
 };
 opensocial.RailsContainer.inherits(opensocial.Container);
@@ -134,14 +134,15 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
     switch (request.type) {
       case 'FETCH_PERSON' :
         var personId = request.id;
-        if (personId == opensocial.DataRequest.PersonId.VIEWER) {
-          requestedValue = this.viewer;
-        } else if (personId == opensocial.DataRequest.PersonId.OWNER) {
-          requestedValue = this.owner;
-        } else {
-          requestedValue = this.viewerFriends.getById(personId)
-              || this.ownerFriends.getById(personId);
-        }
+		if (personId == this.viewer.getId() || 
+			personId == opensocial.DataRequest.PersonId.VIEWER || 
+			personId == opensocial.DataRequest.PersonId.OWNER) {
+	        requestedValue = this.viewer;
+		} else {
+			// Request from server
+			hadError = true;
+			requestedValue = null;
+		}
         break;
 
       case 'FETCH_PEOPLE' :
@@ -192,19 +193,7 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
 
       case 'FETCH_PERSON_APP_DATA' :
         var ids = this.getIds(request.idSpec);
-
-        var values = {};
-        for (var i = 0; i < ids.length; i++) {
-          var id = ids[i];
-          if (this.personAppData[id]) {
-            values[id] = {};
-            for (var j = 0; j < request.keys.length; j++) {
-              values[id][request.keys[j]]
-                  = this.personAppData[id][request.keys[j]];
-            }
-          }
-        }
-        requestedValue = values;
+        requestedValue = {};
         break;
 
       case 'UPDATE_PERSON_APP_DATA' :
