@@ -27,7 +27,7 @@ To bootstrap the static assets you need to run the generator:
 ruby script/generator opensocial_assets
 
 And finally to embed the container in a ERb template use the helper:
-<%= opensocial_container('http://vivekjishtu.com/opensocial/reddit.xml') %>
+<%= opensocial_container('http://www.last.fm/opensocial/myfavouritemusic.xml') %>
 
 Caveats
 =======
