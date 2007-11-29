@@ -23,11 +23,20 @@ end
 To add the "feeds" resources:
 ruby script/generator opensocial
 
-To bootstrap the static assets you need to run the generator:
+If you support the OpenSocial REST API already, then use this instead to avoid the pollution:
 ruby script/generator opensocial_assets
 
 And finally to embed the container in a ERb template use the helper:
 <%= opensocial_container('http://www.last.fm/opensocial/myfavouritemusic.xml') %>
+
+In the config/environment.rb you need to add
+OpenSocialContainer::Configuration.person_class = 'User'
+
+to get the support for people to be your "User" class.  The user needs to have:
+def self.opensocial_id_column_name; 'id'; end
+
+and should define a title:
+def title; self.display_name; end
 
 Caveats
 =======
