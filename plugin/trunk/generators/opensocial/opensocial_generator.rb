@@ -19,7 +19,7 @@ class OpensocialGenerator < Rails::Generator::Base
       m.file 'controllers/shared_controller.rb', 'app/controllers/feeds/shared_controller.rb'
       
       # Helpers
-      m.template 'people_helper.rb', 'app/helpers/feeds/people_helper.rb'
+      m.template 'helpers/people_helper.rb', 'app/helpers/feeds/people_helper.rb'
       
       # Models
       m.file 'models/app.rb', 'app/models/feeds/app.rb'
@@ -38,7 +38,7 @@ class OpensocialGenerator < Rails::Generator::Base
       m.file "views/shared/index.xml.builder", "app/views/feeds/shared/index.xml.builder"
       m.file "views/shared/show.xml.builder", "app/views/feeds/shared/show.xml.builder"
       
-      m.dependency 'opensocial_assets'
+      m.dependency 'opensocial_assets', ['']
     end
   end
   
