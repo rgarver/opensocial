@@ -38,8 +38,7 @@ class OpensocialGenerator < Rails::Generator::Base
       m.file "views/shared/index.xml.builder", "app/views/feeds/shared/index.xml.builder"
       m.file "views/shared/show.xml.builder", "app/views/feeds/shared/show.xml.builder"
       
-      # Routes (need to look at adding support for namespace matching on this, fake it for now)
-      # m.route_resources 'apps', :path_prefix => 'feeds', :name_prefix => 'feeds_', :namespace => 'feeds/'
+      m.dependency 'opensocial_assets'
     end
   end
   
