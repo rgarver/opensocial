@@ -1,4 +1,4 @@
-class Feeds::AppsController < ApplicationController
+class Feeds::AppsController < Feeds::BaseController
   # GET /feeds_apps
   # GET /feeds_apps.xml
   def index

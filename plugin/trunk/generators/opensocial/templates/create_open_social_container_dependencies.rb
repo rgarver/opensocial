@@ -1,4 +1,4 @@
-class CreateApps < ActiveRecord::Migration
+class CreateOpenSocialContainerDependencies < ActiveRecord::Migration
   def self.up
     create_table :apps do |t|
       t.string :source_url
@@ -24,9 +24,17 @@ class CreateApps < ActiveRecord::Migration
 
       t.timestamps
     end
+    
+    create_table :persistences do |t|
+      t.integer :person_id, :app_id
+      t.string :type, :instance_id, :key, :value
+      
+      t.timestamps
+    end
   end
 
   def self.down
     drop_table :apps
+    drop_table :persistence
   end
 end

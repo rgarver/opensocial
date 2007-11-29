@@ -1,4 +1,6 @@
 class Feeds::App < ActiveRecord::Base
+  has_many :persistence
+  
   validates_uniqueness_of :source_url
   validates_presence_of :source_url
   
@@ -17,6 +19,9 @@ class Feeds::App < ActiveRecord::Base
     document.elements.each('/Module/UserPref') {|pref| @user_preferences[pref.attributes['name']] = pref.attributes['default_value']}
     
     self.save!
+  rescue SocketError, REXML::ParseException
+    @content = '<html><body style="margin: auto; padding: auto;"><h1>Application Unavailable</h1></body></html>'
+    @content_type = 'html'
   end
   
   def update_from_source_xml(xml)

@@ -22,6 +22,8 @@
  * (b) Easily test gadgets with arbitrary initial state.
  */
 
+Document.prototype.$TAG = function(tag){return this.getElementsByTagName(tag);}
+Element.prototype.$TAG = function(tag){return this.getElementsByTagName(tag);}	
 
 /**
  * Implements the opensocial.Container apis.
@@ -143,13 +145,35 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
 	        requestedValue = this.viewer;
 		} else {
 			// Request from server
+			new Ajax.Request('/feeds/people/' + personId.toString(), {
+				method: 'get',
+				asynchronous: false, // Need to change this to pipeline the process a bit
+				onSuccess: function(transport) {
+					var parser = new DOMParser();
+					var xml = parser.parseFromString(transport.responseText, 'text/xml');
+					
+					var personHash = {
+						'id': xml.$TAG('entry')[0].$TAG('id')[0].textContent,
+						'name': xml.$TAG('entry')[0].$TAG('title')[0].textContent,
+						'title': xml.$TAG('entry')[0].$TAG('title')[0].textContent,
+						'updated': xml.$TAG('entry')[0].$TAG('updated')[0].textContent
+					};
+					requestedValue = new opensocial.Person(personHash, false, false);
+					hadError = false;
+				},
+				onFailure: function(transport) {
+					requestedValue = null;
+					hadError = true;
+				}
+			});
+			
 			// And then append to the people hash
-			hadError = true;
-			requestedValue = null;
+			this.people[personId] = requestedValue;
 		}
         break;
 
       case 'FETCH_PEOPLE' :
+		alert("FETCH_PEOPLE not fully supported");
         var idSpec = request.idSpec;
         var persons = [];
         if (idSpec == opensocial.DataRequest.Group.VIEWER_FRIENDS) {
@@ -174,6 +198,7 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
         break;
 
       case 'FETCH_GLOBAL_APP_DATA' :
+		alert('FETCH_GLOBAL_APP_DATA not fully supported');
         var values = {};
         var keys =  request.keys;
         for (var i = 0; i < keys.length; i++) {
@@ -183,6 +208,7 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
         break;
 
       case 'FETCH_INSTANCE_APP_DATA' :
+		alert('FETCH_INSTANCE_APP_DATA not fully supported');
         var values = {};
         var keys =  request.keys;
         for (var i = 0; i < keys.length; i++) {
@@ -192,22 +218,27 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
         break;
 
       case 'UPDATE_INSTANCE_APP_DATA' :
+		alert('UPDATE_INSTANCE_APP_DATA not fully supported');
         this.instanceAppData[request.key] = request.value;
         break;
 
       case 'FETCH_PERSON_APP_DATA' :
         var ids = this.getIds(request.idSpec);
-        requestedValue = {};
+
+		if (!this.personAppData[personId]) {
+	        this.fetchPersonAppData(ids);
+		}
+        requestedValue = this.personAppData;
         break;
 
       case 'UPDATE_PERSON_APP_DATA' :
+		alert('UPDATE_PERSON_APP_DATA not fully supported');
         var userId = request.id;
+		
         // Gadgets can only edit viewer data
         if (userId == opensocial.DataRequest.PersonId.VIEWER
             || userId == this.viewer.getId()) {
-          userId = this.viewer.getId();
-          this.personAppData[userId] = this.personAppData[userId] || {};
-          this.personAppData[userId][request.key] = request.value;
+          this.createPersonAppData(this.viewer.getId(), request.key, request.value)
         } else {
           hadError = true;
         }
@@ -215,6 +246,7 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
         break;
 
       case 'FETCH_ACTIVITIES' :
+		alert('FETCH_ACTIVITIES not fully supported');
         var ids = this.getIds(request.idSpec);
 
         var requestedActivities = [];
@@ -336,6 +368,29 @@ opensocial.RailsContainer.prototype.newFetchPersonAppDataRequest = function(
   return {'type' : 'FETCH_PERSON_APP_DATA', 'idSpec' : idSpec, 'keys' : keys};
 };
 
+opensocial.RailsContainer.prototype.fetchPersonAppData = function(ids) {
+	// ids can contain: VIEWER, OWNER, OWNER_FRIENDS, or a specific person id
+	for(var i=0; i < ids.length; i++) {
+		var data = {};
+		
+		new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/' + ids[i] + '/shared', {
+			method: 'get',
+			asynchronous: false, // Need to change this to pipeline the process a bit
+			onSuccess: function(transport) {
+				var parser = new DOMParser();
+				var xml = parser.parseFromString(transport.responseText, 'text/xml');
+				
+				var entries = xml.$TAG('entry');
+				for(var j = 0; j < entries.length; j++) {
+					data[entries[j].$TAG('title')[0].textContent] =
+								entries[j].$TAG('content')[0].textContent;
+				}
+			}
+		});
+		this.personAppData[ids[i]] = data;
+	}
+};
+
 
 /**
  * Used to request an update of an app field for the given person.
@@ -351,6 +406,21 @@ opensocial.RailsContainer.prototype.newUpdatePersonAppDataRequest = function(id,
     key, value) {
   return {'type' : 'UPDATE_PERSON_APP_DATA', 'id' : id, 'key' : key,
     'value' : value};
+};
+
+opensocial.RailsContainer.prototype.createPersonAppData = function(userId, key, value) {
+	// ids can contain: VIEWER, OWNER, OWNER_FRIENDS, or a specific person id
+	atom = '<entry xmlns="http://www.w3.org/2005/Atom"><title>' + key + '</title><content>' + value + '</content></entry>'
+	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/' + userId + '/shared', {
+		method: 'post',
+		contentType: 'application/atom+xml',
+		parameters: encodeURIComponent(atom),
+		asynchronous: false, // Need to change this to pipeline the process a bit
+		onSuccess: function(transport) {
+			var parser = new DOMParser();
+			var xml = parser.parseFromString(transport.responseText, 'text/xml');
+		}
+	});
 };
 
 

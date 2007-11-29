@@ -1,4 +1,5 @@
 require File.join(File.dirname(__FILE__), 'open_social_container', 'route_mapper')
+require File.join(File.dirname(__FILE__), 'open_social_container', 'configurator')
 
 module ActionView
   module Helpers
@@ -19,4 +20,26 @@ module ActionView
   end
 end
 
+module OpenSocialContainer
+  module ActsAsOpenSocialPerson
+    def self.included(base)
+      base.send :include, OpenSocialContainer::ActsAsOpenSocialPerson::InstanceMethods
+      base.send :extend, OpenSocialContainer::ActsAsOpenSocialPerson::ClassMethods
+    end
+    
+    module InstanceMethods
+    end
+    
+    module ClassMethods
+      # Informs the opensocial_container plugin how to route requests for /feeds/people requests.
+      # This function take several options
+      # * <tt>:map</tt>: A hash that contains name mappings 
+      def acts_as_opensocial_person(opts = {})
+        OpenSocialContainer::Configuration.person_class = self.name
+      end
+    end
+  end
+end
+
 ActionView::Base.send :include, ActionView::Helpers::OpenSocialContainerHelper
+ActiveRecord::Base.send :include, OpenSocialContainer::ActsAsOpenSocialPerson
