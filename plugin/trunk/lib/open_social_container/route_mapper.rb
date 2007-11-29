@@ -16,6 +16,16 @@ module OpenSocialContainer
       end
       ::ActionController::Base.send :helper_method, :opensocial_container_url, :opensocial_container_proxy_url, :opensocial_container_proxy_path
       
+      self.namespace :feeds do |feed|
+        feed.resources :apps do |app|
+          app.resources :persistence, :collection => {:global => :get}, :member => {:friends => :get} do |persistent|
+            persistent.resources :shared
+            persistent.resources :instance
+          end
+        end
+        feed.resources :people, :member => {:friends => :get}
+      end
+      
       @set.add_route('/container', 
                           {:controller => 'open_social_container/container', 
                           :action => 'contain', 
