@@ -7,7 +7,8 @@
 			// Initialize the mock container with the state that has been read
 			var railsContainer = new opensocial.RailsContainer(
 				'http://localhost:3000',
-				new opensocial.Person({"id":"1", "name":"Ryan Garver", "email":"ragarver@gmail.com"}, true, true),
+				new opensocial.Person({"id":"<%= @owner.send(@owner.class.opensocial_id_column_name) %>", "name":"<%= @owner.title %>", "email":"<%= @owner.email %>"}, true, false),
+				new opensocial.Person({"id":"<%= @viewer.send(@viewer.class.opensocial_id_column_name) %>", "name":"<%= @viewer.title %>", "email":"<%= @viewer.email %>"}, false, true),
 				'<%= @app.id %>');
 
 			opensocial.Container.setContainer(railsContainer);

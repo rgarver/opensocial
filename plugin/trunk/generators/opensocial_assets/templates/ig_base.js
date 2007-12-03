@@ -44,14 +44,15 @@ Element.prototype.$TAG = function(tag){return this.getElementsByTagName(tag);}
  *    person ids to the activities they have.
  * @constructor
  */
-opensocial.RailsContainer = function(baseUrl, opt_owner, opt_appId) {
+opensocial.RailsContainer = function(baseUrl, opt_owner, opt_viewer, opt_appId) {
   this._baseUrl = baseUrl;
   this.people = {
-	'VIEWER': opt_owner,
+	'VIEWER': opt_viewer,
 	'OWNER': opt_owner,
   };
   this.people[opt_owner.getId()] = opt_owner;
-  this.viewer = opt_owner;
+  this.people[opt_viewer.getId()] = opt_viewer;
+  this.viewer = opt_viewer;
   this.owner = opt_owner;
   this.viewerFriends = {};
   this.ownerFriends = {};
@@ -175,11 +176,11 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
       case 'FETCH_PEOPLE' :
 		alert("FETCH_PEOPLE not fully supported");
         var idSpec = request.idSpec;
-        var persons = [];
+        var persons = [this.owner];
         if (idSpec == opensocial.DataRequest.Group.VIEWER_FRIENDS) {
-          persons = this.viewerFriends.asArray().concat();
+          // persons = this.viewerFriends.asArray().concat();
         } else if (idSpec == opensocial.DataRequest.Group.OWNER_FRIENDS) {
-          persons = this.ownerFriends.asArray().concat();
+          // persons = this.ownerFriends.asArray().concat();
         } else {
           if (!opensocial.Container.isArray(idSpec)) {
             idSpec = [idSpec];

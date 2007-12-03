@@ -23,14 +23,15 @@ end
 To add the "feeds" resources:
 ruby script/generator opensocial
 
-If you support the OpenSocial REST API already, then use this instead to avoid the pollution:
+If you support the OpenSocial REST API already, then use this instead to avoid the app/ pollution:
 ruby script/generator opensocial_assets
 
 And finally to embed the container in a ERb template use the helper:
-<%= opensocial_container('http://www.last.fm/opensocial/myfavouritemusic.xml') %>
+<%= opensocial_container('http://www.last.fm/opensocial/myfavouritemusic.xml', :owner => @user, :viewer => current_user) %>
 
 In the config/environment.rb you need to add
 OpenSocialContainer::Configuration.person_class = 'User'
+OpenSocialContainer::Configuration.secret = 'a secret password'
 
 to get the support for people to be your "User" class.  The user needs to have:
 def self.opensocial_id_column_name; 'id'; end

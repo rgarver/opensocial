@@ -10,7 +10,7 @@ module ActionView
       def opensocial_container(app_src, *opts)
         options = opts.last.is_a?(Hash) ? opts.last.symbolize_keys : {}
         app = app_src.is_a?(Feeds::App) ? app_src : Feeds::App.find_or_create_by_source_url(app_src)
-        self.content_tag(:iframe, '', {:src => opensocial_container_url(app.source_url), 
+        self.content_tag(:iframe, '', {:src => opensocial_container_url(app.source_url, options.delete(:owner), options.delete(:viewer)), 
                           :style => 'border:0px; padding:0px; margin:0px;', 
                           :width => (app.width || '320'), 
                           :height => (app.height || '200'), 
@@ -21,6 +21,16 @@ module ActionView
 end
 
 module OpenSocialContainer
+  module SessionSigning
+    def self.included(base)
+      base.send :helper_method, :sign_opensocial_session
+    end
+    
+    def sign_opensocial_session(sess)
+      Digest::MD5.digest("#{OpenSocialContainer::Configuration.secret}--#{sess}")
+    end
+  end
+  
   module ActsAsOpenSocialPerson
     def self.included(base)
       base.send :include, OpenSocialContainer::ActsAsOpenSocialPerson::InstanceMethods
@@ -42,4 +52,5 @@ module OpenSocialContainer
 end
 
 ActionView::Base.send :include, ActionView::Helpers::OpenSocialContainerHelper
+ActionController::Base.send :include, OpenSocialContainer::SessionSigning
 ActiveRecord::Base.send :include, OpenSocialContainer::ActsAsOpenSocialPerson
