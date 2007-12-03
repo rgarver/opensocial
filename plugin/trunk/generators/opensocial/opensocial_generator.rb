@@ -20,11 +20,13 @@ class OpensocialGenerator < Rails::Generator::Base
       
       # Helpers
       m.template 'helpers/people_helper.rb', 'app/helpers/feeds/people_helper.rb'
+      m.template 'helpers/persistence_helper.rb', 'app/helpers/feeds/persistence_helper.rb'
       
       # Models
       m.file 'models/app.rb', 'app/models/feeds/app.rb'
       m.file 'models/persistence.rb', 'app/models/feeds/persistence.rb'
       m.file 'models/shared.rb', 'app/models/feeds/shared.rb'
+      m.file 'models/global.rb', 'app/models/feeds/global.rb'
       
       # Migrations
       m.migration_template 'create_open_social_container_dependencies.rb', 'db/migrate', :migration_file_name => 'create_open_social_container_dependencies'
@@ -37,6 +39,7 @@ class OpensocialGenerator < Rails::Generator::Base
       m.file "views/people/friends.xml.builder", "app/views/feeds/people/friends.xml.builder"
       m.file "views/shared/index.xml.builder", "app/views/feeds/shared/index.xml.builder"
       m.file "views/shared/show.xml.builder", "app/views/feeds/shared/show.xml.builder"
+      m.file "views/persistence/global.xml.builder", "app/views/feeds/persistence/global.xml.builder"
       
       m.dependency 'opensocial_assets', ['']
     end

@@ -222,7 +222,7 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
         // Gadgets can only edit viewer data
         if (userId == opensocial.DataRequest.PersonId.VIEWER
             || userId == this.viewer.getId()) {
-          this.createPersonAppData(this.viewer.getId(), request.key, request.value)
+          this.createPersonAppData(this.viewer.getId(), request.key, request.value);
         } else {
           hadError = true;
         }
@@ -352,6 +352,25 @@ opensocial.RailsContainer.prototype.newFetchGlobalAppDataRequest = function(
     keys) {
   return {'type' : 'FETCH_GLOBAL_APP_DATA', 'keys' : keys};
 };
+
+opensocial.RailsContainer.prototype.fetchGlobalAppData = function() {
+	var data = {};
+	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/global', {
+		method: 'get',
+		asynchronous: false, // Need to change this to pipeline the process a bit
+		onSuccess: function(transport) {
+			var parser = new DOMParser();
+			var xml = parser.parseFromString(transport.responseText, 'text/xml');
+			
+			var entries = xml.$TAG('entry');
+			for(var j = 0; j < entries.length; j++) {
+				data[entries[j].$TAG('title')[0].textContent] =
+							entries[j].$TAG('content')[0].textContent;
+			}
+		}
+	});
+	this.globalAppData = data;
+}
 
 
 /**
