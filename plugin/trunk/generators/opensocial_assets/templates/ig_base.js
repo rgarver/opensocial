@@ -143,30 +143,10 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
       case 'FETCH_PERSON' :
         var personId = request.id;
 		if (this.people[personId]) {
-	        requestedValue = this.viewer;
+			requestedValue = this.people[personId];
 		} else {
 			// Request from server
-			new Ajax.Request('/feeds/people/' + personId.toString(), {
-				method: 'get',
-				asynchronous: false, // Need to change this to pipeline the process a bit
-				onSuccess: function(transport) {
-					var parser = new DOMParser();
-					var xml = parser.parseFromString(transport.responseText, 'text/xml');
-					
-					var personHash = {
-						'id': xml.$TAG('entry')[0].$TAG('id')[0].textContent,
-						'name': xml.$TAG('entry')[0].$TAG('title')[0].textContent,
-						'title': xml.$TAG('entry')[0].$TAG('title')[0].textContent,
-						'updated': xml.$TAG('entry')[0].$TAG('updated')[0].textContent
-					};
-					requestedValue = new opensocial.Person(personHash, false, false);
-					hadError = false;
-				},
-				onFailure: function(transport) {
-					requestedValue = null;
-					hadError = true;
-				}
-			});
+			requestedValue = this.fetchPerson(personId)
 			
 			// And then append to the people hash
 			this.people[personId] = requestedValue;
@@ -174,27 +154,30 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
         break;
 
       case 'FETCH_PEOPLE' :
-		alert("FETCH_PEOPLE not fully supported");
         var idSpec = request.idSpec;
         var persons = [this.owner];
         if (idSpec == opensocial.DataRequest.Group.VIEWER_FRIENDS) {
-          // persons = this.viewerFriends.asArray().concat();
+          persons = this.fetchFriends('VIEWER');
         } else if (idSpec == opensocial.DataRequest.Group.OWNER_FRIENDS) {
-          // persons = this.ownerFriends.asArray().concat();
+          persons = this.fetchFriends('OWNER');
         } else {
           if (!opensocial.Container.isArray(idSpec)) {
             idSpec = [idSpec];
           }
           for (var i = 0; i < idSpec.length; i++) {
-            var person = this.viewerFriends.getById(idSpec[i]);
-            if (person == null) {
-              person = this.ownerFriends.getById(idSpec[i]);
-            }
-            if (person != null) {
-              persons.push(person);
-            }
+			if(this.people[idSpec[i]]) {
+				persons.push(this.people[idSpec[i]]);
+			} else {
+				var person = this.fetchPerson(idSpec[i]);
+			
+	            if (person != null) {
+				  this.people[idSpec[i]] = person;
+	              persons.push(person);
+	            }
+			}
           }
         }
+		
         requestedValue = new opensocial.Collection(persons);
         break;
 
@@ -288,6 +271,29 @@ opensocial.RailsContainer.prototype.newFetchPersonRequest = function(id,
   return {'type' : 'FETCH_PERSON', 'id' : id};
 };
 
+opensocial.RailsContainer.prototype.fetchPerson = function(id) {
+	var person = null;
+	
+	new Ajax.Request('/feeds/people/' + id.toString(), {
+		method: 'get',
+		asynchronous: false, // Need to change this to pipeline the process a bit
+		onSuccess: function(transport) {
+			var parser = new DOMParser();
+			var xml = parser.parseFromString(transport.responseText, 'text/xml');
+			
+			var personHash = {
+				'id': xml.$TAG('entry')[0].$TAG('id')[0].textContent,
+				'name': xml.$TAG('entry')[0].$TAG('title')[0].textContent,
+				'title': xml.$TAG('entry')[0].$TAG('title')[0].textContent,
+				'updated': xml.$TAG('entry')[0].$TAG('updated')[0].textContent
+			};
+			person = new opensocial.Person(personHash, false, false);
+		}
+	});
+	
+	return person;
+}
+
 
 /**
  * Used to request friends from the server, optionally joined with app data
@@ -305,6 +311,32 @@ opensocial.RailsContainer.prototype.newFetchPeopleRequest = function(idSpec,
     opt_params) {
   return {'type' : 'FETCH_PEOPLE', 'idSpec' : idSpec};
 };
+
+opensocial.RailsContainer.prototype.fetchFriends = function(id) {
+	var people = [];
+	
+	new Ajax.Request('/feeds/people/' + id.toString() + '/friends', {
+		method: 'get',
+		asynchronous: false, // Need to change this to pipeline the process a bit
+		onSuccess: function(transport) {
+			var parser = new DOMParser();
+			var xml = parser.parseFromString(transport.responseText, 'text/xml');
+			var raw_people = xml.$TAG('entry');
+			
+			for(var i=0; i < raw_people.length; i++){
+				var personHash = {
+					'id': raw_people[i].$TAG('id')[0].textContent,
+					'name': raw_people[i].$TAG('title')[0].textContent,
+					'title': raw_people[i].$TAG('title')[0].textContent,
+					'updated': raw_people[i].$TAG('updated')[0].textContent
+				};
+				people.push(new opensocial.Person(personHash, false, false));
+			}
+		}
+	});
+	
+	return people;
+}
 
 
 /**

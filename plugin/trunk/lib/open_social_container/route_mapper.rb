@@ -1,6 +1,6 @@
 require 'action_controller/routing'
 require File.join(File.dirname(__FILE__), 'route_ext')
-require File.join(File.dirname(__FILE__), 'container_controller')
+# require File.join(File.dirname(__FILE__), 'container_controller')
 
 module OpenSocialContainer
   module RouteMapper

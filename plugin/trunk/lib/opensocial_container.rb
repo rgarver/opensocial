@@ -1,3 +1,4 @@
+$:.unshift(File.join(File.dirname(__FILE__), 'open_social_container'))
 require File.join(File.dirname(__FILE__), 'open_social_container', 'route_mapper')
 require File.join(File.dirname(__FILE__), 'open_social_container', 'configurator')
 

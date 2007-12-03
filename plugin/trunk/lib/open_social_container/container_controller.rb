@@ -1,9 +1,9 @@
 require 'rexml/document'
 
 module OpenSocialContainer
-  class ContainerController < ActionController::Base
+  class ContainerController < ::ApplicationController
+    layout false
     self.prepend_view_path File.join(File.dirname(__FILE__), '..')
-    session :session_key => "_myapp_session", :secret => "some secret phrase"
     
     def contain
       sig = Base64.decode64(params[:sig])
