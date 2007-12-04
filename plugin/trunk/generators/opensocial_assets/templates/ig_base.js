@@ -201,8 +201,7 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
         break;
 
       case 'UPDATE_INSTANCE_APP_DATA' :
-		alert('UPDATE_INSTANCE_APP_DATA not fully supported');
-        this.instanceAppData[request.key] = request.value;
+		this.createInstanceAppData(request.key, request.value);
         break;
 
       case 'FETCH_PERSON_APP_DATA' :
@@ -416,6 +415,22 @@ opensocial.RailsContainer.prototype.newUpdateInstanceAppDataRequest = function(
   return {'type' : 'UPDATE_INSTANCE_APP_DATA', 'key' : key, 'value' : value};
 };
 
+opensocial.RailsContainer.prototype.createInstanceAppData = function(key, value) {
+	atom = '<entry xmlns="http://www.w3.org/2005/Atom"><title>' + key + '</title><content>' + value + '</content></entry>';
+	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/VIEWER/instance', {
+		method: 'post',
+		contentType: 'application/atom+xml',
+		parameters: atom,
+		asynchronous: false,
+		onSuccess: function(transport) { opensocial.Container.get().processCreateInstanceAppData(transport); }
+	});
+}
+
+opensocial.RailsContainer.prototype.processCreateInstanceAppData = function(transport) {
+	var parser = new DOMParser();
+	var xml = parser.parseFromString(transport.responseText, 'text/xml');
+}
+
 
 /**
  * Used to request app data for the given people.
@@ -483,18 +498,20 @@ opensocial.RailsContainer.prototype.newUpdatePersonAppDataRequest = function(id,
 
 opensocial.RailsContainer.prototype.createPersonAppData = function(userId, key, value) {
 	// ids can contain: VIEWER, OWNER, OWNER_FRIENDS, or a specific person id
-	atom = '<entry xmlns="http://www.w3.org/2005/Atom"><title>' + key + '</title><content>' + value + '</content></entry>'
+	atom = '<entry xmlns="http://www.w3.org/2005/Atom"><title>' + key + '</title><content>' + value + '</content></entry>';
 	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/' + userId + '/shared', {
 		method: 'post',
 		contentType: 'application/atom+xml',
-		parameters: encodeURIComponent(atom),
-		asynchronous: false, // Need to change this to pipeline the process a bit
-		onSuccess: function(transport) {
-			var parser = new DOMParser();
-			var xml = parser.parseFromString(transport.responseText, 'text/xml');
-		}
+		parameters: atom,
+		asynchronous: false,
+		onSuccess: function(transport) { opensocial.Container.get().processCreatePersonAppData(transport); }
 	});
 };
+
+opensocial.RailsContainer.prototype.processCreatePersonAppData = function(transport) {
+	var parser = new DOMParser();
+	var xml = parser.parseFromString(transport.responseText, 'text/xml');
+}
 
 
 /**
