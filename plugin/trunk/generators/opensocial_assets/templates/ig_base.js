@@ -185,12 +185,13 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
       case 'FETCH_GLOBAL_APP_DATA' :
         var values = {};
         var keys =  request.keys;
-
+		
+		//this.globalAppData = this.fetchGlobalAppData();
+        // for (var i = 0; i < keys.length; i++) {
+        //   values[keys[i]] = this.globalAppData[keys[i]];
+        // }
 		this.fetchGlobalAppData();
-        for (var i = 0; i < keys.length; i++) {
-          values[keys[i]] = this.globalAppData[keys[i]];
-        }
-        requestedValue = values;
+        requestedValue = this.globalAppData;
         break;
 
       case 'FETCH_INSTANCE_APP_DATA' :
@@ -207,9 +208,7 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
       case 'FETCH_PERSON_APP_DATA' :
         var ids = this.getIds(request.idSpec);
 
-		if (!this.personAppData[personId]) {
-	        this.fetchPersonAppData(ids);
-		}
+        this.fetchPersonAppData(ids);
         requestedValue = this.personAppData;
         break;
 
@@ -351,22 +350,22 @@ opensocial.RailsContainer.prototype.newFetchGlobalAppDataRequest = function(
 };
 
 opensocial.RailsContainer.prototype.fetchGlobalAppData = function() {
-	var data = {};
 	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/global', {
 		method: 'get',
 		asynchronous: false, // Need to change this to pipeline the process a bit
-		onSuccess: function(transport) {
-			var parser = new DOMParser();
-			var xml = parser.parseFromString(transport.responseText, 'text/xml');
-			
-			var entries = xml.$TAG('entry');
-			for(var j = 0; j < entries.length; j++) {
-				data[entries[j].$TAG('title')[0].textContent] =
-							entries[j].$TAG('content')[0].textContent;
-			}
-		}
+		onSuccess: function(transport){opensocial.Container.get().processGlobalAppData(transport);}
 	});
-	this.globalAppData = data;
+}
+
+opensocial.RailsContainer.prototype.processGlobalAppData = function(transport) {
+	var parser = new DOMParser();
+	var xml = parser.parseFromString(transport.responseText, 'text/xml');
+	
+	var entries = xml.$TAG('entry');
+	for(var j = 0; j < entries.length; j++) {
+		this.globalAppData[entries[j].$TAG('title')[0].textContent] =
+					entries[j].$TAG('content')[0].textContent;
+	}
 }
 
 
@@ -439,25 +438,31 @@ opensocial.RailsContainer.prototype.newFetchPersonAppDataRequest = function(
 opensocial.RailsContainer.prototype.fetchPersonAppData = function(ids) {
 	// ids can contain: VIEWER, OWNER, OWNER_FRIENDS, or a specific person id
 	for(var i=0; i < ids.length; i++) {
-		var data = {};
-		
 		new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/' + ids[i] + '/shared', {
 			method: 'get',
 			asynchronous: false, // Need to change this to pipeline the process a bit
-			onSuccess: function(transport) {
-				var parser = new DOMParser();
-				var xml = parser.parseFromString(transport.responseText, 'text/xml');
-				
-				var entries = xml.$TAG('entry');
-				for(var j = 0; j < entries.length; j++) {
-					data[entries[j].$TAG('title')[0].textContent] =
-								entries[j].$TAG('content')[0].textContent;
-				}
-			}
+			onSuccess: function(transport) { opensocial.Container.get().processPersonAppData(transport, ids[i]);}
 		});
-		this.personAppData[ids[i]] = data;
 	}
 };
+
+opensocial.RailsContainer.prototype.processPersonAppData = function(transport, id) {
+	if(id == 'VIEWER') {
+		id = this.viewer.getId();
+	} else if(id == 'OWNER') {
+		id = this.owner.getId();
+	}
+	
+	var parser = new DOMParser();
+	var xml = parser.parseFromString(transport.responseText, 'text/xml');
+	
+	var entries = xml.$TAG('entry');
+	for(var j = 0; j < entries.length; j++) {
+		if(!this.personAppData[id]) this.personAppData[id] = {};
+		this.personAppData[id][entries[j].$TAG('title')[0].textContent] =
+					entries[j].$TAG('content')[0].textContent;
+	}
+}
 
 
 /**
