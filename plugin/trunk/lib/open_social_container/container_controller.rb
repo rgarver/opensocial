@@ -7,10 +7,11 @@ module OpenSocialContainer
     
     def contain
       sig = Base64.decode64(params[:sig])
-      (session[:owner_id], session[:viewer_id], session[:set_at]) = Marshal.restore(Base64.decode64(params[:sess]))
+      (session[:owner_id], session[:viewer_id], session[:instance_id], session[:set_at]) = 
+                  Marshal.restore(Base64.decode64(params[:sess]))
       raise "Invalid session(#{sig} != #{sign_opensocial_session(params[:sess])}) : #{session[:owner_id]} : #{session[:viewer_id]} : #{session[:set_at]}" unless sig == sign_opensocial_session(params[:sess])
       
-      
+      @instance_id = 
       @owner = person_class.find(session[:owner_id])
       @viewer = person_class.find(session[:viewer_id])
       @app = Feeds::App.find_by_source_url(params[:src])

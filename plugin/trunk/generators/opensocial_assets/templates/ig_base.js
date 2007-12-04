@@ -44,7 +44,7 @@ Element.prototype.$TAG = function(tag){return this.getElementsByTagName(tag);}
  *    person ids to the activities they have.
  * @constructor
  */
-opensocial.RailsContainer = function(baseUrl, opt_owner, opt_viewer, opt_appId) {
+opensocial.RailsContainer = function(baseUrl, opt_owner, opt_viewer, opt_appId, opt_instanceId) {
   this._baseUrl = baseUrl;
   this.people = {
 	'VIEWER': opt_viewer,
@@ -60,7 +60,8 @@ opensocial.RailsContainer = function(baseUrl, opt_owner, opt_viewer, opt_appId) 
   this.instanceAppData = {};
   this.personAppData = {};
   this.activities = {};
-  this.appId = opt_appId || 'sampleContainerAppId';
+  this.appId = opt_appId;
+  this.instanceId = opt_instanceId;
 };
 opensocial.RailsContainer.inherits(opensocial.Container);
 
@@ -182,9 +183,10 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
         break;
 
       case 'FETCH_GLOBAL_APP_DATA' :
-		alert('FETCH_GLOBAL_APP_DATA not fully supported');
         var values = {};
         var keys =  request.keys;
+
+		this.fetchGlobalAppData();
         for (var i = 0; i < keys.length; i++) {
           values[keys[i]] = this.globalAppData[keys[i]];
         }
@@ -192,13 +194,9 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
         break;
 
       case 'FETCH_INSTANCE_APP_DATA' :
-		alert('FETCH_INSTANCE_APP_DATA not fully supported');
-        var values = {};
         var keys =  request.keys;
-        for (var i = 0; i < keys.length; i++) {
-          values[keys[i]] = this.instanceAppData[keys[i]];
-        }
-        requestedValue = values;
+		this.instanceAppData = this.fetchInstanceAppData(keys[i]);
+        requestedValue = this.instanceAppData;
         break;
 
       case 'UPDATE_INSTANCE_APP_DATA' :
@@ -216,7 +214,6 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
         break;
 
       case 'UPDATE_PERSON_APP_DATA' :
-		alert('UPDATE_PERSON_APP_DATA not fully supported');
         var userId = request.id;
 		
         // Gadgets can only edit viewer data
@@ -386,6 +383,25 @@ opensocial.RailsContainer.prototype.newFetchInstanceAppDataRequest = function(
     keys) {
   return {'type' : 'FETCH_INSTANCE_APP_DATA', 'keys' : keys};
 };
+
+opensocial.RailsContainer.prototype.fetchInstanceAppData = function() {
+	var data = {};
+	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/VIEWER/instance', {
+		method: 'get',
+		asynchronous: false, // Need to change this to pipeline the process a bit
+		onSuccess: function(transport) {
+			var parser = new DOMParser();
+			var xml = parser.parseFromString(transport.responseText, 'text/xml');
+			
+			var entries = xml.$TAG('entry');
+			for(var j = 0; j < entries.length; j++) {
+				data[entries[j].$TAG('title')[0].textContent] =
+							entries[j].$TAG('content')[0].textContent;
+			}
+		}
+	});
+	return data;
+}
 
 
 /**

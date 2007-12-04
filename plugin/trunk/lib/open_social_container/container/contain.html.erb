@@ -9,7 +9,7 @@
 				'http://localhost:3000',
 				new opensocial.Person({"id":"<%= @owner.send(@owner.class.opensocial_id_column_name) %>", "name":"<%= @owner.title %>", "email":"<%= @owner.email %>"}, true, false),
 				new opensocial.Person({"id":"<%= @viewer.send(@viewer.class.opensocial_id_column_name) %>", "name":"<%= @viewer.title %>", "email":"<%= @viewer.email %>"}, false, true),
-				'<%= @app.id %>');
+				'<%= @app.id %>', '<%= @instance_id %>');
 
 			opensocial.Container.setContainer(railsContainer);
 			

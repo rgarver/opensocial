@@ -5,9 +5,10 @@ require File.join(File.dirname(__FILE__), 'route_ext')
 module OpenSocialContainer
   module RouteMapper
     def opensocial_container(subdomain)
-      ::ActionController::Base.send(:define_method, :opensocial_container_url) do |src, owner, viewer|
+      ::ActionController::Base.send(:define_method, :opensocial_container_url) do |src, owner, viewer, instance|
         sess = Base64.encode64(Marshal.dump([owner.is_a?(Numeric) ? owner : owner.id,
                 viewer.is_a?(Numeric) ? viewer : viewer.id,
+                instance,
                 Time.now]))
         sig = Base64.encode64(sign_opensocial_session(sess))
         "http://#{subdomain}.#{request.host}:#{request.port}/container?src=#{URI.encode(src)}&sess=#{URI.encode(sess).gsub('+', '%2b')}&sig=#{URI.encode(sig).gsub('+', '%2b')}"

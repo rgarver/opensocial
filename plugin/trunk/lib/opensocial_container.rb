@@ -11,7 +11,7 @@ module ActionView
       def opensocial_container(app_src, *opts)
         options = opts.last.is_a?(Hash) ? opts.last.symbolize_keys : {}
         app = app_src.is_a?(Feeds::App) ? app_src : Feeds::App.find_or_create_by_source_url(app_src)
-        self.content_tag(:iframe, '', {:src => opensocial_container_url(app.source_url, options.delete(:owner), options.delete(:viewer)), 
+        self.content_tag(:iframe, '', {:src => opensocial_container_url(app.source_url, options.delete(:owner), options.delete(:viewer), options.delete(:instance_id)), 
                           :style => 'border:0px; padding:0px; margin:0px;', 
                           :width => (app.width || '320'), 
                           :height => (app.height || '200'), 
