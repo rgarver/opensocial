@@ -1,0 +1,111 @@
+<h1>New app</h1>
+
+<%= error_messages_for :app %>
+
+<% form_for(@app) do |f| %>
+  <p>
+    <b>Source url</b><br />
+    <%= f.text_field :source_url %>
+  </p>
+
+  <p>
+    <b>Title</b><br />
+    <%= f.text_field :title %>
+  </p>
+
+  <p>
+    <b>Description</b><br />
+    <%= f.text_area :description %>
+  </p>
+
+  <p>
+    <b>Directory title</b><br />
+    <%= f.text_field :directory_title %>
+  </p>
+
+  <p>
+    <b>Title url</b><br />
+    <%= f.text_field :title_url %>
+  </p>
+
+  <p>
+    <b>Author</b><br />
+    <%= f.text_field :author %>
+  </p>
+
+  <p>
+    <b>Author email</b><br />
+    <%= f.text_field :author_email %>
+  </p>
+
+  <p>
+    <b>Author affiliation</b><br />
+    <%= f.text_field :author_affiliation %>
+  </p>
+
+  <p>
+    <b>Author location</b><br />
+    <%= f.text_field :author_location %>
+  </p>
+
+  <p>
+    <b>Screenshot</b><br />
+    <%= f.text_field :screenshot %>
+  </p>
+
+  <p>
+    <b>Thumbnail</b><br />
+    <%= f.text_field :thumbnail %>
+  </p>
+
+  <p>
+    <b>Height</b><br />
+    <%= f.text_field :height %>
+  </p>
+
+  <p>
+    <b>Width</b><br />
+    <%= f.text_field :width %>
+  </p>
+
+  <p>
+    <b>Scaling</b><br />
+    <%= f.check_box :scaling %>
+  </p>
+
+  <p>
+    <b>Scrolling</b><br />
+    <%= f.check_box :scrolling %>
+  </p>
+
+  <p>
+    <b>Singleton</b><br />
+    <%= f.check_box :singleton %>
+  </p>
+
+  <p>
+    <b>Author photo</b><br />
+    <%= f.text_field :author_photo %>
+  </p>
+
+  <p>
+    <b>Author aboutme</b><br />
+    <%= f.text_area :author_aboutme %>
+  </p>
+
+  <p>
+    <b>Author link</b><br />
+    <%= f.text_field :author_link %>
+  </p>
+
+  <p>
+    <b>Author quote</b><br />
+    <%= f.text_area :author_quote %>
+  </p>
+
+  <p>
+    <%= f.submit "Create" %>
+  </p>
+<% end %>
+
+<%= link_to 'Back', feeds_apps_path %>
