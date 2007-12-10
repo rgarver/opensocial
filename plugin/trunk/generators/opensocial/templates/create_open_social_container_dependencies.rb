@@ -21,14 +21,18 @@ class CreateOpenSocialContainerDependencies < ActiveRecord::Migration
       t.text :author_aboutme
       t.string :author_link
       t.text :author_quote
-
       t.timestamps
     end
     
     create_table :persistences do |t|
       t.integer :person_id, :app_id
       t.string :type, :instance_id, :key, :value
-      
+      t.timestamps
+    end
+    
+    create_table :activities do |t|
+      t.integer :user_id, :source_id
+      t.text :title
       t.timestamps
     end
   end

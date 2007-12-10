@@ -28,6 +28,9 @@ module OpenSocialContainer
             persistent.resources :instance
           end
         end
+        feed.namespace :activities do |activity|
+          activity.resources :user
+        end
         feed.resources :people, :member => {:friends => :get}
       end
       

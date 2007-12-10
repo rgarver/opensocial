@@ -44,7 +44,7 @@ Element.prototype.$TAG = function(tag){return this.getElementsByTagName(tag);}
  *    person ids to the activities they have.
  * @constructor
  */
-opensocial.RailsContainer = function(baseUrl, opt_owner, opt_viewer, opt_appId, opt_instanceId) {
+opensocial.RailsContainer = function(baseUrl, opt_owner, opt_viewer, opt_appId, opt_appTitle, opt_instanceId) {
   this._baseUrl = baseUrl;
   this.people = {
 	'VIEWER': opt_viewer,
@@ -61,6 +61,7 @@ opensocial.RailsContainer = function(baseUrl, opt_owner, opt_viewer, opt_appId, 
   this.personAppData = {};
   this.activities = {};
   this.appId = opt_appId;
+  this.appTitle = opt_appTitle;
   this.instanceId = opt_instanceId;
 };
 opensocial.RailsContainer.inherits(opensocial.Container);
@@ -185,11 +186,7 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
       case 'FETCH_GLOBAL_APP_DATA' :
         var values = {};
         var keys =  request.keys;
-		
-		//this.globalAppData = this.fetchGlobalAppData();
-        // for (var i = 0; i < keys.length; i++) {
-        //   values[keys[i]] = this.globalAppData[keys[i]];
-        // }
+
 		this.fetchGlobalAppData();
         requestedValue = this.globalAppData;
         break;
@@ -225,11 +222,12 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
         break;
 
       case 'FETCH_ACTIVITIES' :
-		alert('FETCH_ACTIVITIES not fully supported');
+				alert('FETCH_ACTIVITIES not fully supported');
         var ids = this.getIds(request.idSpec);
 
-        var requestedActivities = [];
+				requestedActivities = []
         for (var i = 0; i < ids.length; i++) {
+					this.fetchActivitiesRequest(ids[i]);
           requestedActivities
               = requestedActivities.concat(this.activities[ids]);
         }
@@ -533,3 +531,41 @@ opensocial.RailsContainer.prototype.newFetchActivitiesRequest = function(idSpec,
     opt_params) {
   return {'type' : 'FETCH_ACTIVITIES', 'idSpec' : idSpec};
 };
+
+opensocial.RailsContainer.prototype.fetchActivitiesRequest = function(id) {
+	new Ajax.Request('/feeds/activities/user/' + id, {
+		method: 'get',
+		asynchronous: false,
+		onSuccess: function(transport) { opensocial.Container.get().processActivitiesRequest(transport, id); }
+	});
+}
+
+opensocial.RailsContainer.prototype.processActivitiesRequest = function(transport, id) {
+	var parser = new DOMParser();
+	var xml = parser.parseFromString(transport.responseText, 'text/xml');
+	
+	var raw_activities = xml.$TAG('entry');
+	this.activities[id] = []
+	for(var i=0; i < raw_activities.length; i++) {
+		this.activities[id].push(new opensocial.newActivity(opensocial.newStream('Folder', 'Title'), raw_activities[i].$TAG('title')[0].textContent));
+	}
+}
+
+/**
+ * Used to send a request to update the server with a new action
+ * 
+ * TODO: This needs to pass this request to the host frame to securely 
+ * negotiate creating an action
+ */
+opensocial.requestCreateActivity = function(activity, priority, callback) {
+	var ok = false;
+	if(priority == "HIGH") {
+		ok = confirm(this.appTitle + " would like to create an activity.  Is that ok?");
+	} else if(priority == "LOW") {
+		ok = true;
+	}
+	
+	if(ok) {
+		alert('Not Yet Implemented');
+	}
+}

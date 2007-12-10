@@ -9,7 +9,7 @@
 				'http://localhost:3000',
 				new opensocial.Person({"id":"<%= @owner.send(@owner.class.opensocial_id_column_name) %>", "name":"<%= @owner.title %>", "email":"<%= @owner.email %>"}, true, false),
 				new opensocial.Person({"id":"<%= @viewer.send(@viewer.class.opensocial_id_column_name) %>", "name":"<%= @viewer.title %>", "email":"<%= @viewer.email %>"}, false, true),
-				'<%= @app.id %>', '<%= @instance_id %>');
+				'<%=h @app.id %>', '<%=h @app.title %>', '<%= @instance_id %>');
 
 			opensocial.Container.setContainer(railsContainer);
 			
@@ -30,11 +30,15 @@
 					this._prefs[pref] = value
 				}
 			}
-
+      
+      ___IG_OnloadHandlers = []
 			function _IG_RegisterOnloadHandler(callback) {
-				window.setTimeout(function(){
-					callback();
-				}, 0);
+			  ___IG_OnloadHandlers.push(callback);
+		  }
+		  function ___IG_RunOnloadHandlers() {
+		    for(var i=0; i < ___IG_OnloadHandlers.length; i++) {
+		      window.setTimeout(___IG_OnloadHandlers[i], 0);
+		    }
 			};
 
 			function _IG_FetchContent(url, func) {
@@ -48,7 +52,7 @@
 			function _IG_AdjustIFrameHeight() {}
 		</script>
 	</head>
-	<body style="margin: 0px; padding: 0px;">
+	<body style="margin: 0px; padding: 0px;" onload="___IG_RunOnloadHandlers();">
 		<div id="gadget_body"><%= @app.content %></div>
 	</body>
 </html>
