@@ -22,8 +22,6 @@
  * (b) Easily test gadgets with arbitrary initial state.
  */
 
-Document.prototype.$TAG = function(tag){return this.getElementsByTagName(tag);}
-Element.prototype.$TAG = function(tag){return this.getElementsByTagName(tag);}	
 
 /**
  * Implements the opensocial.Container apis.
@@ -131,120 +129,94 @@ opensocial.RailsContainer.prototype.getIds = function(idSpec) {
  */
 opensocial.RailsContainer.prototype.requestData = function(dataRequest,
     callback) {
-  var requestObjects = dataRequest.getRequestObjects();
+  var requestObjects = dataRequest.getRequestObjects().clone();
   var dataResponseValues = {};
   var globalError = false;
 
-  for (var requestNum = 0; requestNum < requestObjects.length; requestNum++) {
-    var request = requestObjects[requestNum].request;
-    var requestName = requestObjects[requestNum].key;
-    var requestedValue;
-    var hadError = false;
+	this._requestData(requestObjects, dataResponseValues, globalError, callback);
+};
+	
+opensocial.RailsContainer.prototype._requestData = function(requestObjects, 
+		dataResponseValues, globalError, callback) {
 
-    switch (request.type) {
-      case 'FETCH_PERSON' :
-        var personId = request.id;
-		if (this.people[personId]) {
-			requestedValue = this.people[personId];
-		} else {
-			// Request from server
-			requestedValue = this.fetchPerson(personId)
-			
-			// And then append to the people hash
-			this.people[personId] = requestedValue;
-		}
-        break;
+	if(requestObjects.length == 0) {
+	  callback(new opensocial.DataResponse(dataResponseValues, globalError));
+		return;
+	}
+	
+	var requestObject = requestObjects.pop();
+  var request = requestObject.request;
+  var requestName = requestObject.key;
 
-      case 'FETCH_PEOPLE' :
-        var idSpec = request.idSpec;
-        var persons = [this.owner];
-        if (idSpec == opensocial.DataRequest.Group.VIEWER_FRIENDS) {
-          persons = this.fetchFriends('VIEWER');
-        } else if (idSpec == opensocial.DataRequest.Group.OWNER_FRIENDS) {
-          persons = this.fetchFriends('OWNER');
-        } else {
-          if (!opensocial.Container.isArray(idSpec)) {
-            idSpec = [idSpec];
-          }
-          for (var i = 0; i < idSpec.length; i++) {
-			if(this.people[idSpec[i]]) {
-				persons.push(this.people[idSpec[i]]);
-			} else {
-				var person = this.fetchPerson(idSpec[i]);
-			
-	            if (person != null) {
-				  this.people[idSpec[i]] = person;
-	              persons.push(person);
-	            }
-			}
-          }
-        }
-		
-        requestedValue = new opensocial.Collection(persons);
-        break;
+	switch (request.type) {
+	  case 'FETCH_PERSON' :
+	    var personId = request.id;
+			this.fetchPerson(personId, requestName, request, requestObjects, 
+					dataResponseValues, globalError, callback);
+	    break;
 
-      case 'FETCH_GLOBAL_APP_DATA' :
-        var values = {};
-        var keys =  request.keys;
+	  case 'FETCH_PEOPLE' :
+	    var idSpec = request.idSpec;
+	    var persons = [this.owner];
+	    if (idSpec == opensocial.DataRequest.Group.VIEWER_FRIENDS) {
+	      this.fetchFriends('VIEWER', requestName, request, requestObjects, 
+						dataResponseValues, globalError, callback);
+	    } else if (idSpec == opensocial.DataRequest.Group.OWNER_FRIENDS) {
+	      this.fetchFriends('OWNER', requestName, request, requestObjects, 
+						dataResponseValues, globalError, callback);
+	    } else {
+	      if (!opensocial.Container.isArray(idSpec)) {
+	        idSpec = [idSpec];
+	      }
+				this.fetchPeople(idSpec.clone(), requestName, request, requestObjects, 
+						dataResponseValues, globalError, callback);
+	    }
+	    break;
 
-		this.fetchGlobalAppData();
-        requestedValue = this.globalAppData;
-        break;
+	  case 'FETCH_GLOBAL_APP_DATA' :
+	    var values = {};
+	    var keys =  request.keys;
 
-      case 'FETCH_INSTANCE_APP_DATA' :
-        var keys =  request.keys;
-		this.instanceAppData = this.fetchInstanceAppData(keys[i]);
-        requestedValue = this.instanceAppData;
-        break;
+			this.fetchGlobalAppData(requestName, request, requestObjects, 
+					dataResponseValues, globalError, callback);
+	    break;
 
-      case 'UPDATE_INSTANCE_APP_DATA' :
-		this.createInstanceAppData(request.key, request.value);
-        break;
+	  case 'FETCH_INSTANCE_APP_DATA' :
+	    var keys =  request.keys;
+			this.instanceAppData = this.fetchInstanceAppData(keys[i], requestName, request, requestObjects, 
+					dataResponseValues, globalError, callback);
+	    break;
 
-      case 'FETCH_PERSON_APP_DATA' :
-        var ids = this.getIds(request.idSpec);
+	  case 'UPDATE_INSTANCE_APP_DATA' :
+			this.createInstanceAppData(request.key, request.value, requestName, request, requestObjects, 
+					dataResponseValues, globalError, callback);
+	    break;
 
-        this.fetchPersonAppData(ids);
-        requestedValue = this.personAppData;
-        break;
+	  case 'FETCH_PERSON_APP_DATA' :
+	    var ids = this.getIds(request.idSpec);
+			this.fetchPersonAppData(ids.clone(), requestName, request, requestObjects, 
+					dataResponseValues, globalError, callback);
+	    break;
 
-      case 'UPDATE_PERSON_APP_DATA' :
-        var userId = request.id;
-		
-        // Gadgets can only edit viewer data
-        if (userId == opensocial.DataRequest.PersonId.VIEWER
-            || userId == this.viewer.getId()) {
-          this.createPersonAppData(this.viewer.getId(), request.key, request.value);
-        } else {
-          hadError = true;
-        }
+	  case 'UPDATE_PERSON_APP_DATA' :
+	    var userId = request.id;
+	    // Gadgets can only edit viewer data
+	    if (userId == opensocial.DataRequest.PersonId.VIEWER
+	        || userId == this.viewer.getId()) {
+	      this.createPersonAppData(this.viewer.getId(), request.key, request.value, requestName, request, requestObjects, 
+								dataResponseValues, globalError, callback);
+	    } else {
+	      this._requestData(requestObjects, dataResponseValues, true, callback);
+	    }
 
-        break;
+	    break;
 
-      case 'FETCH_ACTIVITIES' :
-				alert('FETCH_ACTIVITIES not fully supported');
-        var ids = this.getIds(request.idSpec);
-
-				requestedActivities = []
-        for (var i = 0; i < ids.length; i++) {
-					this.fetchActivitiesRequest(ids[i]);
-          requestedActivities
-              = requestedActivities.concat(this.activities[ids]);
-        }
-        requestedValue = {
-          // Real containers should set the requested stream here
-          'requestedStream' : null,
-          'activities' : new opensocial.Collection(requestedActivities)};
-        break;
-    }
-
-    dataResponseValues[requestName]
-        = new opensocial.ResponseItem(request, requestedValue, hadError);
-    globalError = globalError || hadError;
-
-  }
-
-  callback(new opensocial.DataResponse(dataResponseValues, globalError));
+	  case 'FETCH_ACTIVITIES' :
+	    var ids = this.getIds(request.idSpec);
+			this.fetchActivitiesRequest(ids.clone(), requestName, request, requestObjects, 
+					dataResponseValues, globalError, callback);
+	    break;
+	}
 };
 
 
@@ -264,28 +236,37 @@ opensocial.RailsContainer.prototype.newFetchPersonRequest = function(id,
   return {'type' : 'FETCH_PERSON', 'id' : id};
 };
 
-opensocial.RailsContainer.prototype.fetchPerson = function(id) {
-	var person = null;
-	
+opensocial.RailsContainer.prototype.fetchPerson = function(id, requestName, request, requestObjects, 
+		dataResponseValues, globalError, callback) {
 	new Ajax.Request('/feeds/people/' + id.toString(), {
 		method: 'get',
-		asynchronous: false, // Need to change this to pipeline the process a bit
+		asynchronous: true, // Need to change this to pipeline the process a bit
 		onSuccess: function(transport) {
-			var parser = new DOMParser();
-			var xml = parser.parseFromString(transport.responseText, 'text/xml');
-			
-			var personHash = {
-				'id': xml.$TAG('entry')[0].$TAG('id')[0].textContent,
-				'name': xml.$TAG('entry')[0].$TAG('title')[0].textContent,
-				'title': xml.$TAG('entry')[0].$TAG('title')[0].textContent,
-				'updated': xml.$TAG('entry')[0].$TAG('updated')[0].textContent
-			};
-			person = new opensocial.Person(personHash, false, false);
+			var container = opensocial.Container.get();
+			dataResponseValues[requestName] = new opensocial.ResponseItem(request, container.processPerson(transport), false);
+			container._requestData(requestObjects, dataResponseValues, globalError, callback);
+		},
+		onFailure: function(transport) {
+			var container = opensocial.Container.get();
+			dataResponseValues[requestName] = new opensocial.ResponseItem(request, null, true);
+			container._requestData(requestObjects, dataResponseValues, true, callback);
 		}
 	});
+};
+
+opensocial.RailsContainer.prototype.processPerson = function(transport) {
+	var parser = new DOMParser();
+	var xml = parser.parseFromString(transport.responseText, 'text/xml');
 	
-	return person;
-}
+	var entry = xml.getElementsByTagName('entry')[0];
+	var personHash = {
+		'id': entry.getElementsByTagName('id')[0].textContent,
+		'name': entry.getElementsByTagName('title')[0].textContent,
+		'title': entry.getElementsByTagName('title')[0].textContent,
+		'updated': entry.getElementsByTagName('updated')[0].textContent
+	};
+	return new opensocial.Person(personHash, false, false);
+};
 
 
 /**
@@ -305,31 +286,69 @@ opensocial.RailsContainer.prototype.newFetchPeopleRequest = function(idSpec,
   return {'type' : 'FETCH_PEOPLE', 'idSpec' : idSpec};
 };
 
-opensocial.RailsContainer.prototype.fetchFriends = function(id) {
-	var people = [];
-	
+opensocial.RailsContainer.prototype.fetchPeople = function(ids, requestName, request, requestObjects, 
+		dataResponseValues, globalError, callback) {
+	this._fetchPeople(ids.pop(), [], ids, requestName, request, requestObjects, dataResponseValues, globalError, callback);
+};
+
+opensocial.RailsContainer.prototype._fetchPeople = function(id, people, ids, requestName, request, requestObjects, 
+		dataResponseValues, globalError, callback) {
+	if(id == null) {
+		dataResponseValues[requestName] = new opensocial.ResponseItem(request, new opensocial.Collection(people), false);
+		this._requestData(requestObjects, dataResponseValues, globalError, callback);
+	} else {
+		new Ajax.Request('/feeds/people/' + id.toString(), {
+			method: 'get',
+			asynchronous: true, // Need to change this to pipeline the process a bit
+			onSuccess: function(transport) {
+				var container = opensocial.Container.get();
+				people.push(container.processPerson(transport));
+				container._fetchPeople(ids.pop(), people, ids, requestName, request, requestObjects, dataResponseValues, globalError, callback);
+			},
+			onFailure: function(transport) {
+				var container = opensocial.Container.get();
+				container._fetchPeople(ids.pop(), people, ids, requestName, request, requestObjects, dataResponseValues, true, callback);
+			}
+		});
+	}
+};
+
+opensocial.RailsContainer.prototype.fetchFriends = function(id, requestName, request, requestObjects, 
+		dataResponseValues, globalError, callback) {
 	new Ajax.Request('/feeds/people/' + id.toString() + '/friends', {
 		method: 'get',
-		asynchronous: false, // Need to change this to pipeline the process a bit
+		asynchronous: true, // Need to change this to pipeline the process a bit
 		onSuccess: function(transport) {
-			var parser = new DOMParser();
-			var xml = parser.parseFromString(transport.responseText, 'text/xml');
-			var raw_people = xml.$TAG('entry');
-			
-			for(var i=0; i < raw_people.length; i++){
-				var personHash = {
-					'id': raw_people[i].$TAG('id')[0].textContent,
-					'name': raw_people[i].$TAG('title')[0].textContent,
-					'title': raw_people[i].$TAG('title')[0].textContent,
-					'updated': raw_people[i].$TAG('updated')[0].textContent
-				};
-				people.push(new opensocial.Person(personHash, false, false));
-			}
+			var container = opensocial.Container.get();
+			dataResponseValues[requestName] = new opensocial.ResponseItem(request, 
+					new opensocial.Collection(container.processFriends(transport)), false);
+			container._requestData(requestObjects, dataResponseValues, globalError, callback);
+		},
+		onFailure: function(transport) {
+			var container = opensocial.Container.get();
+			dataResponseValues[requestName] = new opensocial.ResponseItem(request, null, true);
+			container._requestData(requestObjects, dataResponseValues, true, callback);
 		}
 	});
+};
+
+opensocial.RailsContainer.prototype.processFriends = function(transport) {
+	var parser = new DOMParser();
+	var xml = parser.parseFromString(transport.responseText, 'text/xml');
+	var raw_people = xml.getElementsByTagName('entry');
 	
+	var people = []
+	for(var i=0; i < raw_people.length; i++){
+		var personHash = {
+			'id': raw_people[i].getElementsByTagName('id')[0].textContent,
+			'name': raw_people[i].getElementsByTagName('title')[0].textContent,
+			'title': raw_people[i].getElementsByTagName('title')[0].textContent,
+			'updated': raw_people[i].getElementsByTagName('updated')[0].textContent
+		};
+		people.push(new opensocial.Person(personHash, false, false));
+	}
 	return people;
-}
+};
 
 
 /**
@@ -346,24 +365,35 @@ opensocial.RailsContainer.prototype.newFetchGlobalAppDataRequest = function(
   return {'type' : 'FETCH_GLOBAL_APP_DATA', 'keys' : keys};
 };
 
-opensocial.RailsContainer.prototype.fetchGlobalAppData = function() {
+opensocial.RailsContainer.prototype.fetchGlobalAppData = function(requestName, request, requestObjects, 
+		dataResponseValues, globalError, callback) {
 	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/global', {
 		method: 'get',
-		asynchronous: false, // Need to change this to pipeline the process a bit
-		onSuccess: function(transport){opensocial.Container.get().processGlobalAppData(transport);}
+		asynchronous: true, // Need to change this to pipeline the process a bit
+		onSuccess: function(transport){
+			var container = opensocial.Container.get();
+			dataResponseValues[requestName] = new opensocial.ResponseItem(request, container.processGlobalAppData(transport), false);
+			container._requestData(requestObjects, dataResponseValues, globalError, callback);
+		},
+		onFailure: function(transport) {
+			var container = opensocial.Container.get();
+			dataResponseValues[requestName] = new opensocial.ResponseItem(request, null, true);
+			container._requestData(requestObjects, dataResponseValues, true, callback);
+		}
 	});
-}
+};
 
 opensocial.RailsContainer.prototype.processGlobalAppData = function(transport) {
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
 	
-	var entries = xml.$TAG('entry');
+	var entries = xml.getElementsByTagName('entry');
 	for(var j = 0; j < entries.length; j++) {
-		this.globalAppData[entries[j].$TAG('title')[0].textContent] =
-					entries[j].$TAG('content')[0].textContent;
+		this.globalAppData[entries[j].getElementsByTagName('title')[0].textContent] =
+					entries[j].getElementsByTagName('content')[0].textContent;
 	}
-}
+	return this.globalAppData;
+};
 
 
 /**
@@ -380,24 +410,38 @@ opensocial.RailsContainer.prototype.newFetchInstanceAppDataRequest = function(
   return {'type' : 'FETCH_INSTANCE_APP_DATA', 'keys' : keys};
 };
 
-opensocial.RailsContainer.prototype.fetchInstanceAppData = function() {
+opensocial.RailsContainer.prototype.fetchInstanceAppData = function(keys, requestName, request, requestObjects, 
+		dataResponseValues, globalError, callback) {
 	var data = {};
 	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/VIEWER/instance', {
 		method: 'get',
-		asynchronous: false, // Need to change this to pipeline the process a bit
+		asynchronous: true, // Need to change this to pipeline the process a bit
 		onSuccess: function(transport) {
-			var parser = new DOMParser();
-			var xml = parser.parseFromString(transport.responseText, 'text/xml');
-			
-			var entries = xml.$TAG('entry');
-			for(var j = 0; j < entries.length; j++) {
-				data[entries[j].$TAG('title')[0].textContent] =
-							entries[j].$TAG('content')[0].textContent;
-			}
+			var container = opensocial.Container.get();
+			dataResponseValues[requestName] = new opensocial.ResponseItem(request, container.processInstanceAppData(transport), false);
+			container._requestData(requestObjects, dataResponseValues, globalError, callback);
+		},
+		onFailure: function(transport) {
+			var container = opensocial.Container.get();
+			dataResponseValues[requestName] = new opensocial.ResponseItem(request, null, true);
+			container._requestData(requestObjects, dataResponseValues, true, callback);
 		}
 	});
 	return data;
-}
+};
+
+opensocial.RailsContainer.prototype.processInstanceAppData = function(transport) {
+	var data = {};
+	var parser = new DOMParser();
+	var xml = parser.parseFromString(transport.responseText, 'text/xml');
+	
+	var entries = xml.getElementsByTagName('entry');
+	for(var j = 0; j < entries.length; j++) {
+		data[entries[j].getElementsByTagName('title')[0].textContent] =
+					entries[j].getElementsByTagName('content')[0].textContent;
+	}
+	return data;
+};
 
 
 /**
@@ -413,16 +457,26 @@ opensocial.RailsContainer.prototype.newUpdateInstanceAppDataRequest = function(
   return {'type' : 'UPDATE_INSTANCE_APP_DATA', 'key' : key, 'value' : value};
 };
 
-opensocial.RailsContainer.prototype.createInstanceAppData = function(key, value) {
+opensocial.RailsContainer.prototype.createInstanceAppData = function(key, value, requestName, request, requestObjects, 
+		dataResponseValues, globalError, callback) {
 	atom = '<entry xmlns="http://www.w3.org/2005/Atom"><title>' + key + '</title><content>' + value + '</content></entry>';
 	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/VIEWER/instance', {
 		method: 'post',
 		contentType: 'application/atom+xml',
 		parameters: atom,
-		asynchronous: false,
-		onSuccess: function(transport) { opensocial.Container.get().processCreateInstanceAppData(transport); }
+		asynchronous: true,
+		onSuccess: function(transport) { 
+			var container = opensocial.Container.get();
+			container.processCreateInstanceAppData(transport); 
+			// dataResponseValues[requestName] = container.processInstanceAppData(transport);
+			container._requestData(requestObjects, dataResponseValues, globalError, callback);
+		},
+		onFailure: function(transport) {
+			var container = opensocial.Container.get();
+			container._requestData(requestObjects, dataResponseValues, true, callback);
+		}
 	});
-}
+};
 
 opensocial.RailsContainer.prototype.processCreateInstanceAppData = function(transport) {
 	var parser = new DOMParser();
@@ -448,34 +502,49 @@ opensocial.RailsContainer.prototype.newFetchPersonAppDataRequest = function(
   return {'type' : 'FETCH_PERSON_APP_DATA', 'idSpec' : idSpec, 'keys' : keys};
 };
 
-opensocial.RailsContainer.prototype.fetchPersonAppData = function(ids) {
-	// ids can contain: VIEWER, OWNER, OWNER_FRIENDS, or a specific person id
-	for(var i=0; i < ids.length; i++) {
-		new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/' + ids[i] + '/shared', {
+opensocial.RailsContainer.prototype.fetchPersonAppData = function(ids, requestName, request, requestObjects, 
+		dataResponseValues, globalError, callback) {
+	this._fetchPersonAppData(ids.pop(), {}, ids, requestName, request, requestObjects, 
+					dataResponseValues, globalError, callback);
+};
+
+opensocial.RailsContainer.prototype._fetchPersonAppData = function(id, personAppData, ids, requestName, 
+		request, requestObjects, dataResponseValues, globalError, callback) {
+  if(id == null) {
+		dataResponseValues[requestName] = new opensocial.ResponseItem(request, personAppData, false);
+		this._requestData(requestObjects, dataResponseValues, globalError, callback);
+	} else {
+		// ids can contain: VIEWER, OWNER, OWNER_FRIENDS, or a specific person id
+		new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/' + id + '/shared', {
 			method: 'get',
-			asynchronous: false, // Need to change this to pipeline the process a bit
-			onSuccess: function(transport) { opensocial.Container.get().processPersonAppData(transport, ids[i]);}
+			asynchronous: true, // Need to change this to pipeline the process a bit
+			onSuccess: function(transport) { 
+				var container = opensocial.Container.get();
+				personAppData[id] = container.processPersonAppData(transport); 
+				container._fetchPersonAppData(ids.pop(), personAppData, ids, requestName, request, requestObjects, 
+								dataResponseValues, globalError, callback);
+			},
+			onFailure: function(transport) {
+				var container = opensocial.Container.get();
+				container._fetchPersonAppData(ids.pop(), personAppData, ids, requestName, request, requestObjects, 
+								dataResponseValues, true, callback);
+			}
 		});
 	}
 };
 
-opensocial.RailsContainer.prototype.processPersonAppData = function(transport, id) {
-	if(id == 'VIEWER') {
-		id = this.viewer.getId();
-	} else if(id == 'OWNER') {
-		id = this.owner.getId();
-	}
-	
+opensocial.RailsContainer.prototype.processPersonAppData = function(transport) {
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
 	
-	var entries = xml.$TAG('entry');
+	var entries = xml.getElementsByTagName('entry');
+	var personAppData = {};
 	for(var j = 0; j < entries.length; j++) {
-		if(!this.personAppData[id]) this.personAppData[id] = {};
-		this.personAppData[id][entries[j].$TAG('title')[0].textContent] =
-					entries[j].$TAG('content')[0].textContent;
+ 		personAppData[entries[j].getElementsByTagName('title')[0].textContent] =
+					entries[j].getElementsByTagName('content')[0].textContent;
 	}
-}
+	return personAppData;
+};
 
 
 /**
@@ -494,22 +563,31 @@ opensocial.RailsContainer.prototype.newUpdatePersonAppDataRequest = function(id,
     'value' : value};
 };
 
-opensocial.RailsContainer.prototype.createPersonAppData = function(userId, key, value) {
+opensocial.RailsContainer.prototype.createPersonAppData = function(userId, key, value, requestName, request, requestObjects, 
+		dataResponseValues, globalError, callback) {
 	// ids can contain: VIEWER, OWNER, OWNER_FRIENDS, or a specific person id
 	atom = '<entry xmlns="http://www.w3.org/2005/Atom"><title>' + key + '</title><content>' + value + '</content></entry>';
 	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/' + userId + '/shared', {
 		method: 'post',
 		contentType: 'application/atom+xml',
 		parameters: atom,
-		asynchronous: false,
-		onSuccess: function(transport) { opensocial.Container.get().processCreatePersonAppData(transport); }
+		asynchronous: true,
+		onSuccess: function(transport) { 
+			var container = opensocial.Container.get();
+			container.processCreatePersonAppData(transport);
+			container._requestData(requestObjects, dataResponseValues, globalError, callback);
+		},
+		onFailure: function(transport) {
+			var container = opensocial.Container.get();
+			container._requestData(requestObjects, dataResponseValues, true, callback);
+		}
 	});
 };
 
 opensocial.RailsContainer.prototype.processCreatePersonAppData = function(transport) {
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
-}
+};
 
 
 /**
@@ -532,40 +610,51 @@ opensocial.RailsContainer.prototype.newFetchActivitiesRequest = function(idSpec,
   return {'type' : 'FETCH_ACTIVITIES', 'idSpec' : idSpec};
 };
 
-opensocial.RailsContainer.prototype.fetchActivitiesRequest = function(id) {
-	new Ajax.Request('/feeds/activities/user/' + id, {
-		method: 'get',
-		asynchronous: false,
-		onSuccess: function(transport) { opensocial.Container.get().processActivitiesRequest(transport, id); }
-	});
-}
+opensocial.RailsContainer.prototype.fetchActivitiesRequest = function(ids, requestName, request, requestObjects, 
+		dataResponseValues, globalError, callback) {
+	this._fetchActivitiesRequest(ids.pop(), [], ids, requestName, requestObjects, 
+			dataResponseValues, globalError, callback);
+};
 
-opensocial.RailsContainer.prototype.processActivitiesRequest = function(transport, id) {
+opensocial.RailsContainer.prototype._fetchActivitiesRequest = function(id, activities, ids, 
+		requestName, request, requestObjects, dataResponseValues, globalError, callback) {
+	if(id == null) {
+		dataResponseValues[requestName] = new opensocial.ResponseItem(request, {
+	    // Real containers should set the requested stream here
+	    'requestedStream' : null,
+	    'activities' : new opensocial.Collection(activities)
+		}, false);;
+		container._requestData(requestObjects, dataResponseValues, globalError, callback);
+	} else {
+		new Ajax.Request('/feeds/activities/user/' + id, {
+			method: 'get',
+			asynchronous: true,
+			onSuccess: function(transport) { 
+				var container = opensocial.Container.get();
+				activities.push(container.processActivitiesRequest(transport, id));
+			
+				container._fetchActivitiesRequest(ids.pop(), activities, ids, requestName, request, requestObjects, 
+						dataResponseValues, globalError, callback);
+			},
+			onFailure: function(transport) {
+				var container = opensocial.Container.get();
+				container._fetchActivitiesRequest(ids.pop(), activities, ids, requestName, request, requestObjects, 
+						dataResponseValues, true, callback);
+			}
+		});
+	}
+};
+
+opensocial.RailsContainer.prototype.processActivitiesRequest = function(transport, 
+		id) {
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
 	
-	var raw_activities = xml.$TAG('entry');
+	var raw_activities = xml.getElementsByTagName('entry');
 	this.activities[id] = []
 	for(var i=0; i < raw_activities.length; i++) {
-		this.activities[id].push(new opensocial.newActivity(opensocial.newStream('Folder', 'Title'), raw_activities[i].$TAG('title')[0].textContent));
-	}
-}
-
-/**
- * Used to send a request to update the server with a new action
- * 
- * TODO: This needs to pass this request to the host frame to securely 
- * negotiate creating an action
- */
-opensocial.requestCreateActivity = function(activity, priority, callback) {
-	var ok = false;
-	if(priority == "HIGH") {
-		ok = confirm(this.appTitle + " would like to create an activity.  Is that ok?");
-	} else if(priority == "LOW") {
-		ok = true;
+		this.activities[id].push(new opensocial.newActivity(opensocial.newStream('Folder', 'Title'), raw_activities[i].getElementsByTagName('title')[0].textContent));
 	}
 	
-	if(ok) {
-		alert('Not Yet Implemented');
-	}
-}
+	return this.activities[id];
+};

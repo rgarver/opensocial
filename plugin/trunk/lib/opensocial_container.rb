@@ -11,8 +11,8 @@ module ActionView
       def opensocial_container(app_src, *opts)
         options = opts.last.is_a?(Hash) ? opts.last.symbolize_keys : {}
         frame_id = "opensocial_container_#{options[:instance_id].to_s.underscore}"
-        app = app_src.is_a?(Feeds::App) ? app_src : Feeds::App.find_or_create_by_source_url(app_src)
-        self.content_tag(:iframe, '', {:src => opensocial_container_url(app.source_url, options.delete(:owner), options.delete(:viewer), options.delete(:instance_id)),
+        app = app_src.is_a?(Feeds::App) ? app_src : Feeds::App.find_by_source_url(app_src)
+        self.content_tag(:iframe, '', {:src => opensocial_container_url(app, options.delete(:owner), options.delete(:viewer), options.delete(:instance_id)),
                           :id => frame_id, :name => frame_id,
                           :style => 'border:0px; padding:0px; margin:0px;', 
                           :width => (app.width || '320'), 
@@ -162,12 +162,16 @@ module ActionView
 
         }
 
-        comm_last_seq = 0;
-        function check_for_comm()
-        {
-        	var frame = null;
+        window.setTimeout(function(){window.setInterval(function() {
+          var frame = null;
         	var innerFrame = null;
         	var current_frame_id = "'+frame_id+'";
+      	  if(window.comm_last_seq == undefined){
+      	    window.comm_last_seq = {};
+      	  }
+      	  if(window.comm_last_seq[current_frame_id] == undefined) {
+      	    comm_last_seq[current_frame_id] = 0;
+      	  }
         	frame = window.frames[current_frame_id];
         	if (frame) {
         		innerFrame = frame.frames[0];
@@ -179,9 +183,9 @@ module ActionView
           			var seqnum = frag.split("!")[0];
           			var data = frag.split("!")[1];
           			//console.log("SeqNum: "+seqnum+",  Data="+data);
-          			if (data.length > 0 && seqnum != comm_last_seq)
+          			if (data.length > 0 && seqnum != window.comm_last_seq[current_frame_id])
           			{
-          				comm_last_seq = seqnum;
+          				window.comm_last_seq[current_frame_id] = seqnum;
           				var decoded_data = Base64.decode(data).split(" ");
           				console.log("Running: "+decoded_data[0] + ": " + decoded_data[1]);
           				if(decoded_data[0] == "resize") {
@@ -191,8 +195,7 @@ module ActionView
         			} catch(e) {}
         		}
         	}
-        }
-        window.setTimeout(function(){window.setInterval(check_for_comm, 1000);}, 2000);
+        }, 1000);}, 2000);
         ', :type => 'text/javascript')
       end
     end

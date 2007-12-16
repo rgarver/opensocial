@@ -1,19 +1,23 @@
 require 'action_controller/routing'
-require File.join(File.dirname(__FILE__), 'route_ext')
+# require File.join(File.dirname(__FILE__), 'route_ext')
 # require File.join(File.dirname(__FILE__), 'container_controller')
 
 module OpenSocialContainer
   module RouteMapper
-    def opensocial_container(subdomain)
-      ::ActionController::Base.send(:define_method, :opensocial_container_url) do |src, owner, viewer, instance|
-        sess = Base64.encode64(Marshal.dump([owner.is_a?(Numeric) ? owner : owner.id,
-                viewer.is_a?(Numeric) ? viewer : viewer.id,
+    def opensocial_container(domain)
+      ::ActionController::Base.send(:define_method, :opensocial_container_url) do |app, owner, viewer, instance|
+        owner_id = owner.is_a?(Numeric) ? owner : owner.id
+        viewer_id = viewer.is_a?(Numeric) ? viewer : viewer.id
+        sess = Base64.encode64(Marshal.dump([owner_id,
+                viewer_id,
                 instance,
+                app.id,
                 Time.now]))
         sig = Base64.encode64(sign_opensocial_session(sess))
-        "http://#{subdomain}.#{request.host}:#{request.port}/container?src=#{URI.encode(src)}&sess=#{URI.encode(sess).gsub('+', '%2b')}&sig=#{URI.encode(sig).gsub('+', '%2b')}"
+        subdomain = "#{instance}"
+        "http://#{subdomain}.#{domain}:#{request.port}/container?sess=#{URI.encode(sess).gsub('+', '%2b')}&sig=#{URI.encode(sig).gsub('+', '%2b')}"
       end
-      ::ActionController::Base.send(:define_method, :opensocial_container_proxy_url) do
+      ::ActionController::Base.send(:define_method, :opensocial_container_proxy_url) do |instance|
         "http://#{subdomain}.#{request.host}:#{request.port}/proxy"
       end
       ::ActionController::Base.send(:define_method, :opensocial_container_proxy_path) do
@@ -36,12 +40,10 @@ module OpenSocialContainer
       
       @set.add_route('/container', 
                           {:controller => 'open_social_container/container', 
-                          :action => 'contain', 
-                          :conditions => {:subdomain => subdomain.to_s}})
+                          :action => 'contain'})
       @set.add_route('/proxy', 
                           {:controller => 'open_social_container/container', 
-                          :action => 'proxy', 
-                          :conditions => {:subdomain => subdomain.to_s}})
+                          :action => 'proxy'})
     end
   end
 end
