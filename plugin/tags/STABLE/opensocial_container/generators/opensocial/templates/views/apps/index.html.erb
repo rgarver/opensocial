@@ -1,0 +1,58 @@
+<h1>Listing apps</h1>
+
+<table>
+  <tr>
+    <th>Source url</th>
+    <th>Title</th>
+    <th>Description</th>
+    <th>Directory title</th>
+    <th>Title url</th>
+    <th>Author</th>
+    <th>Author email</th>
+    <th>Author affiliation</th>
+    <th>Author location</th>
+    <th>Screenshot</th>
+    <th>Thumbnail</th>
+    <th>Height</th>
+    <th>Width</th>
+    <th>Scaling</th>
+    <th>Scrolling</th>
+    <th>Singleton</th>
+    <th>Author photo</th>
+    <th>Author aboutme</th>
+    <th>Author link</th>
+    <th>Author quote</th>
+  </tr>
+
+<% for app in @apps %>
+  <tr>
+    <td><%=h app.source_url %></td>
+    <td><%=h app.title %></td>
+    <td><%=h app.description %></td>
+    <td><%=h app.directory_title %></td>
+    <td><%=h app.title_url %></td>
+    <td><%=h app.author %></td>
+    <td><%=h app.author_email %></td>
+    <td><%=h app.author_affiliation %></td>
+    <td><%=h app.author_location %></td>
+    <td><%=h app.screenshot %></td>
+    <td><%=h app.thumbnail %></td>
+    <td><%=h app.height %></td>
+    <td><%=h app.width %></td>
+    <td><%=h app.scaling %></td>
+    <td><%=h app.scrolling %></td>
+    <td><%=h app.singleton %></td>
+    <td><%=h app.author_photo %></td>
+    <td><%=h app.author_aboutme %></td>
+    <td><%=h app.author_link %></td>
+    <td><%=h app.author_quote %></td>
+    <td><%= link_to 'Show', app %></td>
+    <td><%= link_to 'Edit', edit_feeds_app_path(app) %></td>
+    <td><%= link_to 'Destroy', app, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New app', new_feeds_app_path %>
