@@ -39,6 +39,7 @@ class CreateOpenSocialContainerDependencies < ActiveRecord::Migration
 
   def self.down
     drop_table :apps
-    drop_table :persistence
+    drop_table :persistences
+    drop_table :activities
   end
 end
