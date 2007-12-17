@@ -17,7 +17,7 @@ In the config/routes.rb file:
 ActionController::Routing::Routes.draw do |map|
   ...
 
-  map.opensocial_container :contain
+  map.opensocial_container "contain.localhost" # this will be turned in to <instance_id>.contain.localhost
 end
 
 To add the "feeds" resources:
@@ -27,7 +27,7 @@ If you support the OpenSocial REST API already, then use this instead to avoid t
 ruby script/generator opensocial_assets
 
 And finally to embed the container in a ERb template use the helper:
-<%= opensocial_container('http://www.last.fm/opensocial/myfavouritemusic.xml', :owner => @user, :viewer => current_user) %>
+<%= opensocial_container('http://www.last.fm/opensocial/myfavouritemusic.xml', :owner => @user, :viewer => current_user, :instance_id => instance.id) %>
 
 In the config/environment.rb you need to add
 OpenSocialContainer::Configuration.person_class = 'User'
