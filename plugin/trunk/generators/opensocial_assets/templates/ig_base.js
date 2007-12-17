@@ -183,7 +183,7 @@ opensocial.RailsContainer.prototype._requestData = function(requestObjects,
 
 	  case 'FETCH_INSTANCE_APP_DATA' :
 	    var keys =  request.keys;
-			this.instanceAppData = this.fetchInstanceAppData(keys[i], requestName, request, requestObjects, 
+			this.instanceAppData = this.fetchInstanceAppData(keys.clone(), requestName, request, requestObjects, 
 					dataResponseValues, globalError, callback);
 	    break;
 
@@ -412,7 +412,6 @@ opensocial.RailsContainer.prototype.newFetchInstanceAppDataRequest = function(
 
 opensocial.RailsContainer.prototype.fetchInstanceAppData = function(keys, requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
-	var data = {};
 	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/VIEWER/instance', {
 		method: 'get',
 		asynchronous: true, // Need to change this to pipeline the process a bit
@@ -427,7 +426,6 @@ opensocial.RailsContainer.prototype.fetchInstanceAppData = function(keys, reques
 			container._requestData(requestObjects, dataResponseValues, true, callback);
 		}
 	});
-	return data;
 };
 
 opensocial.RailsContainer.prototype.processInstanceAppData = function(transport) {
@@ -612,7 +610,7 @@ opensocial.RailsContainer.prototype.newFetchActivitiesRequest = function(idSpec,
 
 opensocial.RailsContainer.prototype.fetchActivitiesRequest = function(ids, requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
-	this._fetchActivitiesRequest(ids.pop(), [], ids, requestName, requestObjects, 
+	this._fetchActivitiesRequest(ids.pop(), [], ids, requestName, request, requestObjects, 
 			dataResponseValues, globalError, callback);
 };
 
@@ -623,17 +621,15 @@ opensocial.RailsContainer.prototype._fetchActivitiesRequest = function(id, activ
 	    // Real containers should set the requested stream here
 	    'requestedStream' : null,
 	    'activities' : new opensocial.Collection(activities)
-		}, false);;
-		container._requestData(requestObjects, dataResponseValues, globalError, callback);
+		}, false);
+		this._requestData(requestObjects, dataResponseValues, globalError, callback);
 	} else {
 		new Ajax.Request('/feeds/activities/user/' + id, {
 			method: 'get',
 			asynchronous: true,
 			onSuccess: function(transport) { 
 				var container = opensocial.Container.get();
-				activities.push(container.processActivitiesRequest(transport, id));
-			
-				container._fetchActivitiesRequest(ids.pop(), activities, ids, requestName, request, requestObjects, 
+				container._fetchActivitiesRequest(ids.pop(), activities.concat(container.processActivitiesRequest(transport, id)), ids, requestName, request, requestObjects, 
 						dataResponseValues, globalError, callback);
 			},
 			onFailure: function(transport) {
