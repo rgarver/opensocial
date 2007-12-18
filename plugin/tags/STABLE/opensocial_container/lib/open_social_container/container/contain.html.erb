@@ -1,0 +1,251 @@
+<html>
+	<head>
+		<%= javascript_include_tag :defaults %>
+		<%= javascript_include_tag 'opensocial/container/OpensocialReference.js' %>
+		<%= javascript_include_tag 'opensocial/container/ig_base.js' %>
+		<script type="text/javascript">
+		/**
+    *
+    * Base64 encode / decode
+    * http://www.webtoolkit.info/
+    *
+    **/
+
+    var Base64 = {
+
+        // private property
+        _keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+
+        // public method for encoding
+        encode : function (input) {
+            var output = "";
+            var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
+            var i = 0;
+
+            input = Base64._utf8_encode(input);
+
+            while (i < input.length) {
+
+                chr1 = input.charCodeAt(i++);
+                chr2 = input.charCodeAt(i++);
+                chr3 = input.charCodeAt(i++);
+
+                enc1 = chr1 >> 2;
+                enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+                enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+                enc4 = chr3 & 63;
+
+                if (isNaN(chr2)) {
+                    enc3 = enc4 = 64;
+                } else if (isNaN(chr3)) {
+                    enc4 = 64;
+                }
+
+                output = output +
+                this._keyStr.charAt(enc1) + this._keyStr.charAt(enc2) +
+                this._keyStr.charAt(enc3) + this._keyStr.charAt(enc4);
+
+            }
+
+            return output;
+        },
+
+        // public method for decoding
+        decode : function (input) {
+            var output = "";
+            var chr1, chr2, chr3;
+            var enc1, enc2, enc3, enc4;
+            var i = 0;
+
+            input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+
+            while (i < input.length) {
+
+                enc1 = this._keyStr.indexOf(input.charAt(i++));
+                enc2 = this._keyStr.indexOf(input.charAt(i++));
+                enc3 = this._keyStr.indexOf(input.charAt(i++));
+                enc4 = this._keyStr.indexOf(input.charAt(i++));
+
+                chr1 = (enc1 << 2) | (enc2 >> 4);
+                chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+                chr3 = ((enc3 & 3) << 6) | enc4;
+
+                output = output + String.fromCharCode(chr1);
+
+                if (enc3 != 64) {
+                    output = output + String.fromCharCode(chr2);
+                }
+                if (enc4 != 64) {
+                    output = output + String.fromCharCode(chr3);
+                }
+
+            }
+
+            output = Base64._utf8_decode(output);
+
+            return output;
+
+        },
+
+        // private method for UTF-8 encoding
+        _utf8_encode : function (string) {
+            string = string.replace(/\r\n/g,"\n");
+            var utftext = "";
+
+            for (var n = 0; n < string.length; n++) {
+
+                var c = string.charCodeAt(n);
+
+                if (c < 128) {
+                    utftext += String.fromCharCode(c);
+                }
+                else if((c > 127) && (c < 2048)) {
+                    utftext += String.fromCharCode((c >> 6) | 192);
+                    utftext += String.fromCharCode((c & 63) | 128);
+                }
+                else {
+                    utftext += String.fromCharCode((c >> 12) | 224);
+                    utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+                    utftext += String.fromCharCode((c & 63) | 128);
+                }
+
+            }
+
+            return utftext;
+        },
+
+        // private method for UTF-8 decoding
+        _utf8_decode : function (utftext) {
+            var string = "";
+            var i = 0;
+            var c = c1 = c2 = 0;
+
+            while ( i < utftext.length ) {
+
+                c = utftext.charCodeAt(i);
+
+                if (c < 128) {
+                    string += String.fromCharCode(c);
+                    i++;
+                }
+                else if((c > 191) && (c < 224)) {
+                    c2 = utftext.charCodeAt(i+1);
+                    string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
+                    i += 2;
+                }
+                else {
+                    c2 = utftext.charCodeAt(i+1);
+                    c3 = utftext.charCodeAt(i+2);
+                    string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
+                    i += 3;
+                }
+
+            }
+
+            return string;
+        }
+
+    }
+		</script>
+		<script type="text/javascript">
+			// Initialize the mock container with the state that has been read
+			baseURL = 'http://localhost:3000';
+			var railsContainer = new opensocial.RailsContainer(
+        baseURL,
+				new opensocial.Person({"id":"<%= @owner.send(@owner.class.opensocial_id_column_name) %>", "name":"<%= @owner.title %>", "email":"<%= @owner.email %>"}, true, false),
+				new opensocial.Person({"id":"<%= @viewer.send(@viewer.class.opensocial_id_column_name) %>", "name":"<%= @viewer.title %>", "email":"<%= @viewer.email %>"}, false, true),
+				'<%=h @app.id %>', '<%=h @app.title %>', '<%= @instance_id %>');
+
+			opensocial.Container.setContainer(railsContainer);
+			
+			var __MODULE_ID__ = "1";
+
+			var _IG_Prefs = Class.create();
+			_IG_Prefs.prototype = {
+				initialize: function(){
+					this._prefs = <%= @app.user_preferences.to_json %>;
+				},
+				getString: function(pref){
+					return this._prefs[pref]
+				},
+				getInt: function(pref){
+					return parseInt(this._prefs[pref])
+				},
+				set: function(pref, value){
+					this._prefs[pref] = value
+				}
+			}
+      
+      ___IG_OnloadHandlers = []
+			function _IG_RegisterOnloadHandler(callback) {
+			  ___IG_OnloadHandlers.push(callback);
+		  }
+		  function ___IG_RunOnloadHandlers() {
+		    for(var i=0; i < ___IG_OnloadHandlers.length; i++) {
+		      window.setTimeout(___IG_OnloadHandlers[i], 0);
+		    }
+			};
+
+			function _IG_FetchContent(url, func) {
+				var proxy_url = _IG_GetCacheUrl(url);
+				new Ajax.Request(proxy_url, {
+					method:'get',
+					onSuccess: function(transport){ func(transport.responseText); }
+				});
+			}
+			
+			function _IG_FetchXMLContent(url, func) {
+			  _IG_FetchContent(url, function(result) {
+			    var parser = new DOMParser();
+        	var xml = parser.parseFromString(result, 'text/xml');
+        	func(xml);
+        });
+			}
+			
+ 			function _IG_AdjustIFrameHeight() {
+        var seq = new Date().getTime();
+        var ifr = document.getElementById('os_comm_frame');
+        var data = Base64.encode("resize " + document.height);
+        var url = baseURL+'/robots.txt#'+seq+'!'+data;
+        ifr.src = url;
+ 			}
+ 			
+ 			function _gel(id) {return $(id);}
+ 			function _gelstn(tagname) {return document.getElementsByTagName(tagname);}
+ 			function _esc(str) { return escape(str); }
+ 			function _unesc(str) { return unescape(str); }
+ 			function _trim(str) { return new String(str).strip(); }
+ 			function _uc(str) { return new String(str).capitalize();}
+ 			function _min(val1, val2) {
+ 			  if(val1 < val2) {
+ 			    return val1;
+ 			  }
+ 			  return val2;
+ 			}
+ 			function _max(val1, val2) {
+ 			  if(val1 > val2) {
+ 			    return val1;
+ 			  }
+ 			  return val2;
+ 			}
+ 			function _hesc(str) {
+ 			  return new String(str).gsub("<", "&lt;").gsub(">", "&gt;").gsub("\'", "\\\'").gsub("\"", "\\\"")
+ 			}
+ 			function _args(str) { return new String(str).toQueryParams(); }
+ 			function _toggle(elem) {elem.toggle();}
+ 			
+      function _IG_GetImage(url) {
+        var i = new Image();
+        i.src = url;
+        return i;
+      }
+      function _IG_GetCacheUrl(url) {
+        return <%= opensocial_container_proxy_path.to_json %> + "?src=" + url.gsub('&', '%26');
+      }
+		</script>
+	</head>
+	<body style="margin: 0px; padding: 0px;" onload="___IG_RunOnloadHandlers();">
+	  <iframe id="os_comm_frame" name="os_comm_frame" style="display:none" height="0" width="0"></iframe>
+		<div id="gadget_body"><%= @app.content %></div>
+	</body>
+</html>
