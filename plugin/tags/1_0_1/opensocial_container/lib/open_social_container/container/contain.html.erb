@@ -187,11 +187,19 @@
 			};
 
 			function _IG_FetchContent(url, func) {
-				var proxy_url = <%= opensocial_container_proxy_path.to_json %> + "?src=" + url.gsub('&', '%26');
+				var proxy_url = _IG_GetCacheUrl(url);
 				new Ajax.Request(proxy_url, {
 					method:'get',
 					onSuccess: function(transport){ func(transport.responseText); }
 				});
+			}
+			
+			function _IG_FetchXMLContent(url, func) {
+			  _IG_FetchContent(url, function(result) {
+			    var parser = new DOMParser();
+        	var xml = parser.parseFromString(result, 'text/xml');
+        	func(xml);
+        });
 			}
 			
  			function _IG_AdjustIFrameHeight() {
@@ -201,6 +209,39 @@
         var url = baseURL+'/robots.txt#'+seq+'!'+data;
         ifr.src = url;
  			}
+ 			
+ 			function _gel(id) {return $(id);}
+ 			function _gelstn(tagname) {return document.getElementsByTagName(tagname);}
+ 			function _esc(str) { return escape(str); }
+ 			function _unesc(str) { return unescape(str); }
+ 			function _trim(str) { return new String(str).strip(); }
+ 			function _uc(str) { return new String(str).capitalize();}
+ 			function _min(val1, val2) {
+ 			  if(val1 < val2) {
+ 			    return val1;
+ 			  }
+ 			  return val2;
+ 			}
+ 			function _max(val1, val2) {
+ 			  if(val1 > val2) {
+ 			    return val1;
+ 			  }
+ 			  return val2;
+ 			}
+ 			function _hesc(str) {
+ 			  return new String(str).gsub("<", "&lt;").gsub(">", "&gt;").gsub("\'", "\\\'").gsub("\"", "\\\"")
+ 			}
+ 			function _args(str) { return new String(str).toQueryParams(); }
+ 			function _toggle(elem) {elem.toggle();}
+ 			
+      function _IG_GetImage(url) {
+        var i = new Image();
+        i.src = url;
+        return i;
+      }
+      function _IG_GetCacheUrl(url) {
+        return <%= opensocial_container_proxy_path.to_json %> + "?src=" + url.gsub('&', '%26');
+      }
 		</script>
 	</head>
 	<body style="margin: 0px; padding: 0px;" onload="___IG_RunOnloadHandlers();">
