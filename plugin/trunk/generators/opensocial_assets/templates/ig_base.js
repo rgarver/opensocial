@@ -73,9 +73,6 @@ rails.Container.prototype.requestCreateActivity = function(activity,
   activity.setField(opensocial.Activity.Field.ID, 'postedActivityId');
 
   var userId = this.viewer.getId();
-  var stream = activity.getField(opensocial.Activity.Field.STREAM);
-  stream.setField(opensocial.Stream.Field.USER_ID, userId);
-  stream.setField(opensocial.Stream.Field.APP_ID, this.appId);
 
   this.activities[userId] = this.activities[userId] || [];
   this.activities[userId].push(activity);
@@ -650,7 +647,8 @@ rails.Container.prototype.processActivitiesRequest = function(transport,
 	var raw_activities = xml.getElementsByTagName('entry');
 	this.activities[id] = []
 	for(var i=0; i < raw_activities.length; i++) {
-		this.activities[id].push(new opensocial.newActivity(opensocial.newStream('Folder', 'Title'), raw_activities[i].getElementsByTagName('title')[0].textContent));
+		this.activities[id].push(new opensocial.newActivity( 	
+			raw_activities[i].getElementsByTagName('title')[0].textContent));
 	}
 	
 	return this.activities[id];
