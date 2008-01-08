@@ -1,7 +1,7 @@
 <html>
 	<head>
 		<%= javascript_include_tag :defaults %>
-		<%= javascript_include_tag 'opensocial/container/OpensocialReference.js' %>
+		<%= javascript_include_tag(%w(opensocial collection container person activity datarequest dataresponse responseitem surface).map{|j| "opensocial/container/#{j}.js"}) %>
 		<%= javascript_include_tag 'opensocial/container/ig_base.js' %>
 		<script type="text/javascript">
 		/**
@@ -150,7 +150,7 @@
 		<script type="text/javascript">
 			// Initialize the mock container with the state that has been read
 			baseURL = 'http://localhost:3000';
-			var railsContainer = new opensocial.RailsContainer(
+			var railsContainer = new rails.Container(
         baseURL,
 				new opensocial.Person({"id":"<%= @owner.send(@owner.class.opensocial_id_column_name) %>", "name":"<%= @owner.title %>", "email":"<%= @owner.email %>"}, true, false),
 				new opensocial.Person({"id":"<%= @viewer.send(@viewer.class.opensocial_id_column_name) %>", "name":"<%= @viewer.title %>", "email":"<%= @viewer.email %>"}, false, true),

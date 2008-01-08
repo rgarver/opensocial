@@ -42,7 +42,8 @@
  *    person ids to the activities they have.
  * @constructor
  */
-opensocial.RailsContainer = function(baseUrl, opt_owner, opt_viewer, opt_appId, opt_appTitle, opt_instanceId) {
+var rails = Class.create(opensocial.Container);
+rails.Container = function(baseUrl, opt_owner, opt_viewer, opt_appId, opt_appTitle, opt_instanceId) {
   this._baseUrl = baseUrl;
   this.people = {
 	'VIEWER': opt_viewer,
@@ -62,10 +63,10 @@ opensocial.RailsContainer = function(baseUrl, opt_owner, opt_viewer, opt_appId, 
   this.appTitle = opt_appTitle;
   this.instanceId = opt_instanceId;
 };
-opensocial.RailsContainer.inherits(opensocial.Container);
+rails.Container.inherits(opensocial.Container);
 
 
-opensocial.RailsContainer.prototype.requestCreateActivity = function(activity,
+rails.Container.prototype.requestCreateActivity = function(activity,
     priority, opt_callback) {
   // Permissioning is not being handled in the mock container. All real
   // containers should check for user permission before posting activities.
@@ -90,7 +91,7 @@ opensocial.RailsContainer.prototype.requestCreateActivity = function(activity,
  *
  * @private
  */
-opensocial.RailsContainer.prototype.getIds = function(idSpec) {
+rails.Container.prototype.getIds = function(idSpec) {
   var ids = [];
   if (idSpec == opensocial.DataRequest.Group.VIEWER_FRIENDS) {
     var friends = this.viewerFriends.asArray();
@@ -127,7 +128,7 @@ opensocial.RailsContainer.prototype.getIds = function(idSpec) {
  * @param {Object} dataRequest The object that specifies the data requested.
  * @param {Function} callback The callback method on completion.
  */
-opensocial.RailsContainer.prototype.requestData = function(dataRequest,
+rails.Container.prototype.requestData = function(dataRequest,
     callback) {
   var requestObjects = dataRequest.getRequestObjects().clone();
   var dataResponseValues = {};
@@ -136,7 +137,7 @@ opensocial.RailsContainer.prototype.requestData = function(dataRequest,
 	this._requestData(requestObjects, dataResponseValues, globalError, callback);
 };
 	
-opensocial.RailsContainer.prototype._requestData = function(requestObjects, 
+rails.Container.prototype._requestData = function(requestObjects, 
 		dataResponseValues, globalError, callback) {
 
 	if(requestObjects.length == 0) {
@@ -231,12 +232,12 @@ opensocial.RailsContainer.prototype._requestData = function(requestObjects,
  *    PROFILE_DETAILS.
  * @return {Object} a request object
  */
-opensocial.RailsContainer.prototype.newFetchPersonRequest = function(id,
+rails.Container.prototype.newFetchPersonRequest = function(id,
     opt_params) {
   return {'type' : 'FETCH_PERSON', 'id' : id};
 };
 
-opensocial.RailsContainer.prototype.fetchPerson = function(id, requestName, request, requestObjects, 
+rails.Container.prototype.fetchPerson = function(id, requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
 	new Ajax.Request('/feeds/people/' + id.toString(), {
 		method: 'get',
@@ -254,7 +255,7 @@ opensocial.RailsContainer.prototype.fetchPerson = function(id, requestName, requ
 	});
 };
 
-opensocial.RailsContainer.prototype.processPerson = function(transport) {
+rails.Container.prototype.processPerson = function(transport) {
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
 	
@@ -281,17 +282,17 @@ opensocial.RailsContainer.prototype.processPerson = function(transport) {
  *    PROFILE_DETAILS, SORT_ORDER, FILTER, FIRST, and MAX.
  * @return {Object} a request object
  */
-opensocial.RailsContainer.prototype.newFetchPeopleRequest = function(idSpec,
+rails.Container.prototype.newFetchPeopleRequest = function(idSpec,
     opt_params) {
   return {'type' : 'FETCH_PEOPLE', 'idSpec' : idSpec};
 };
 
-opensocial.RailsContainer.prototype.fetchPeople = function(ids, requestName, request, requestObjects, 
+rails.Container.prototype.fetchPeople = function(ids, requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
 	this._fetchPeople(ids.pop(), [], ids, requestName, request, requestObjects, dataResponseValues, globalError, callback);
 };
 
-opensocial.RailsContainer.prototype._fetchPeople = function(id, people, ids, requestName, request, requestObjects, 
+rails.Container.prototype._fetchPeople = function(id, people, ids, requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
 	if(id == null) {
 		dataResponseValues[requestName] = new opensocial.ResponseItem(request, new opensocial.Collection(people), false);
@@ -313,7 +314,7 @@ opensocial.RailsContainer.prototype._fetchPeople = function(id, people, ids, req
 	}
 };
 
-opensocial.RailsContainer.prototype.fetchFriends = function(id, requestName, request, requestObjects, 
+rails.Container.prototype.fetchFriends = function(id, requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
 	new Ajax.Request('/feeds/people/' + id.toString() + '/friends', {
 		method: 'get',
@@ -332,7 +333,7 @@ opensocial.RailsContainer.prototype.fetchFriends = function(id, requestName, req
 	});
 };
 
-opensocial.RailsContainer.prototype.processFriends = function(transport) {
+rails.Container.prototype.processFriends = function(transport) {
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
 	var raw_people = xml.getElementsByTagName('entry');
@@ -360,12 +361,12 @@ opensocial.RailsContainer.prototype.processFriends = function(transport) {
  *     "all keys".
  * @return {Object} a request object
  */
-opensocial.RailsContainer.prototype.newFetchGlobalAppDataRequest = function(
+rails.Container.prototype.newFetchGlobalAppDataRequest = function(
     keys) {
   return {'type' : 'FETCH_GLOBAL_APP_DATA', 'keys' : keys};
 };
 
-opensocial.RailsContainer.prototype.fetchGlobalAppData = function(requestName, request, requestObjects, 
+rails.Container.prototype.fetchGlobalAppData = function(requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
 	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/global', {
 		method: 'get',
@@ -383,7 +384,7 @@ opensocial.RailsContainer.prototype.fetchGlobalAppData = function(requestName, r
 	});
 };
 
-opensocial.RailsContainer.prototype.processGlobalAppData = function(transport) {
+rails.Container.prototype.processGlobalAppData = function(transport) {
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
 	
@@ -405,12 +406,12 @@ opensocial.RailsContainer.prototype.processGlobalAppData = function(transport) {
  *     "all keys".
  * @return {Object} a request object
  */
-opensocial.RailsContainer.prototype.newFetchInstanceAppDataRequest = function(
+rails.Container.prototype.newFetchInstanceAppDataRequest = function(
     keys) {
   return {'type' : 'FETCH_INSTANCE_APP_DATA', 'keys' : keys};
 };
 
-opensocial.RailsContainer.prototype.fetchInstanceAppData = function(keys, requestName, request, requestObjects, 
+rails.Container.prototype.fetchInstanceAppData = function(keys, requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
 	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/VIEWER/instance', {
 		method: 'get',
@@ -428,7 +429,7 @@ opensocial.RailsContainer.prototype.fetchInstanceAppData = function(keys, reques
 	});
 };
 
-opensocial.RailsContainer.prototype.processInstanceAppData = function(transport) {
+rails.Container.prototype.processInstanceAppData = function(transport) {
 	var data = {};
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
@@ -450,12 +451,12 @@ opensocial.RailsContainer.prototype.processInstanceAppData = function(transport)
  * @param {String} value The value
  * @return {Object} a request object
  */
-opensocial.RailsContainer.prototype.newUpdateInstanceAppDataRequest = function(
+rails.Container.prototype.newUpdateInstanceAppDataRequest = function(
     key, value) {
   return {'type' : 'UPDATE_INSTANCE_APP_DATA', 'key' : key, 'value' : value};
 };
 
-opensocial.RailsContainer.prototype.createInstanceAppData = function(key, value, requestName, request, requestObjects, 
+rails.Container.prototype.createInstanceAppData = function(key, value, requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
 	atom = '<entry xmlns="http://www.w3.org/2005/Atom"><title>' + key + '</title><content>' + value + '</content></entry>';
 	new Ajax.Request('/feeds/apps/' + this.appId + '/persistence/VIEWER/instance', {
@@ -476,7 +477,7 @@ opensocial.RailsContainer.prototype.createInstanceAppData = function(key, value,
 	});
 };
 
-opensocial.RailsContainer.prototype.processCreateInstanceAppData = function(transport) {
+rails.Container.prototype.processCreateInstanceAppData = function(transport) {
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
 }
@@ -495,18 +496,18 @@ opensocial.RailsContainer.prototype.processCreateInstanceAppData = function(tran
  *     "all keys".
  * @return {Object} a request object
  */
-opensocial.RailsContainer.prototype.newFetchPersonAppDataRequest = function(
+rails.Container.prototype.newFetchPersonAppDataRequest = function(
     idSpec, keys) {
   return {'type' : 'FETCH_PERSON_APP_DATA', 'idSpec' : idSpec, 'keys' : keys};
 };
 
-opensocial.RailsContainer.prototype.fetchPersonAppData = function(ids, requestName, request, requestObjects, 
+rails.Container.prototype.fetchPersonAppData = function(ids, requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
 	this._fetchPersonAppData(ids.pop(), {}, ids, requestName, request, requestObjects, 
 					dataResponseValues, globalError, callback);
 };
 
-opensocial.RailsContainer.prototype._fetchPersonAppData = function(id, personAppData, ids, requestName, 
+rails.Container.prototype._fetchPersonAppData = function(id, personAppData, ids, requestName, 
 		request, requestObjects, dataResponseValues, globalError, callback) {
   if(id == null) {
 		dataResponseValues[requestName] = new opensocial.ResponseItem(request, personAppData, false);
@@ -531,7 +532,7 @@ opensocial.RailsContainer.prototype._fetchPersonAppData = function(id, personApp
 	}
 };
 
-opensocial.RailsContainer.prototype.processPersonAppData = function(transport) {
+rails.Container.prototype.processPersonAppData = function(transport) {
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
 	
@@ -555,13 +556,13 @@ opensocial.RailsContainer.prototype.processPersonAppData = function(transport) {
  * @param {String} value The value
  * @return {Object} a request object
  */
-opensocial.RailsContainer.prototype.newUpdatePersonAppDataRequest = function(id,
+rails.Container.prototype.newUpdatePersonAppDataRequest = function(id,
     key, value) {
   return {'type' : 'UPDATE_PERSON_APP_DATA', 'id' : id, 'key' : key,
     'value' : value};
 };
 
-opensocial.RailsContainer.prototype.createPersonAppData = function(userId, key, value, requestName, request, requestObjects, 
+rails.Container.prototype.createPersonAppData = function(userId, key, value, requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
 	// ids can contain: VIEWER, OWNER, OWNER_FRIENDS, or a specific person id
 	atom = '<entry xmlns="http://www.w3.org/2005/Atom"><title>' + key + '</title><content>' + value + '</content></entry>';
@@ -582,7 +583,7 @@ opensocial.RailsContainer.prototype.createPersonAppData = function(userId, key, 
 	});
 };
 
-opensocial.RailsContainer.prototype.processCreatePersonAppData = function(transport) {
+rails.Container.prototype.processCreatePersonAppData = function(transport) {
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
 };
@@ -603,18 +604,18 @@ opensocial.RailsContainer.prototype.processCreatePersonAppData = function(transp
  *    opt_params Additional params to pass to the request.
  * @return {Object} a request object
  */
-opensocial.RailsContainer.prototype.newFetchActivitiesRequest = function(idSpec,
+rails.Container.prototype.newFetchActivitiesRequest = function(idSpec,
     opt_params) {
   return {'type' : 'FETCH_ACTIVITIES', 'idSpec' : idSpec};
 };
 
-opensocial.RailsContainer.prototype.fetchActivitiesRequest = function(ids, requestName, request, requestObjects, 
+rails.Container.prototype.fetchActivitiesRequest = function(ids, requestName, request, requestObjects, 
 		dataResponseValues, globalError, callback) {
 	this._fetchActivitiesRequest(ids.pop(), [], ids, requestName, request, requestObjects, 
 			dataResponseValues, globalError, callback);
 };
 
-opensocial.RailsContainer.prototype._fetchActivitiesRequest = function(id, activities, ids, 
+rails.Container.prototype._fetchActivitiesRequest = function(id, activities, ids, 
 		requestName, request, requestObjects, dataResponseValues, globalError, callback) {
 	if(id == null) {
 		dataResponseValues[requestName] = new opensocial.ResponseItem(request, {
@@ -641,7 +642,7 @@ opensocial.RailsContainer.prototype._fetchActivitiesRequest = function(id, activ
 	}
 };
 
-opensocial.RailsContainer.prototype.processActivitiesRequest = function(transport, 
+rails.Container.prototype.processActivitiesRequest = function(transport, 
 		id) {
 	var parser = new DOMParser();
 	var xml = parser.parseFromString(transport.responseText, 'text/xml');
