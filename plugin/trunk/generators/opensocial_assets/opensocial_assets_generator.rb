@@ -9,11 +9,10 @@ class OpensocialAssetsGenerator < Rails::Generator::Base
   def manifest
     record do |m|
       m.directory destination_directory
-      m.template 'OpensocialReference.js', File.join(destination_directory, 'OpensocialReference.js')
       %w(opensocial collection container person activity datarequest dataresponse responseitem surface).each do |j|
-        m.template "#{j}.js", File.join(destination_directory, "#{j}.js")
+        m.file "#{j}.js", File.join(destination_directory, "#{j}.js")
       end
-      m.template 'ig_base.js', File.join(destination_directory, 'ig_base.js')
+      m.file 'ig_base.js', File.join(destination_directory, 'ig_base.js')
     end
   end
 end

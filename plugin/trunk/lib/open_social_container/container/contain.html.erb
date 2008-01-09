@@ -1,7 +1,10 @@
 <html>
 	<head>
 		<%= javascript_include_tag :defaults %>
-		<%= javascript_include_tag(*%w(opensocial collection container person activity datarequest dataresponse responseitem surface).map{|j| "opensocial/container/#{j}.js"}) %>
+		<%= javascript_include_tag(*[%w(
+		          opensocial collection container person
+		          activity datarequest dataresponse responseitem
+		          surface).map{|j| "opensocial/container/#{j}.js"}, {:cache => 'OpensocialReference'}].flatten) %>
 		<%= javascript_include_tag 'opensocial/container/ig_base.js' %>
 		<script type="text/javascript">
 		/**
