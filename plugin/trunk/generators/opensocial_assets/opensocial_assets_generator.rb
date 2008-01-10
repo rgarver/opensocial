@@ -12,7 +12,7 @@ class OpensocialAssetsGenerator < Rails::Generator::Base
       %w(opensocial collection container person activity datarequest dataresponse responseitem surface).each do |j|
         m.file "#{j}.js", File.join(destination_directory, "#{j}.js")
       end
-      m.file 'ig_base.js', File.join(destination_directory, 'ig_base.js')
+      m.template 'rails_container.js', File.join(destination_directory, 'ig_base.js')
     end
   end
 end

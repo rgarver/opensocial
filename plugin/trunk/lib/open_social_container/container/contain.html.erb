@@ -157,7 +157,8 @@
         baseURL,
 				new opensocial.Person({"id":"<%= @owner.send(@owner.class.opensocial_id_column_name) %>", "name":"<%= @owner.title %>", "email":"<%= @owner.email %>"}, true, false),
 				new opensocial.Person({"id":"<%= @viewer.send(@viewer.class.opensocial_id_column_name) %>", "name":"<%= @viewer.title %>", "email":"<%= @viewer.email %>"}, false, true),
-				'<%=h @app.id %>', '<%=h @app.title %>', '<%= @instance_id %>');
+				'<%=h @app.id %>', '<%=h @app.title %>', '<%=h OpenSocialContainer::Configuration.app_domain %>'
+				'<%= @instance_id %>');
 
 			opensocial.Container.setContainer(railsContainer);
 			
