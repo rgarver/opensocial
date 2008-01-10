@@ -43,35 +43,34 @@
  * @constructor
  */
 var rails = Class.create();
-rails.Container = Class.create(opensocial.Container, {
-	initialize: function(baseUrl, opt_owner, opt_viewer, opt_appId, opt_appTitle, opt_appDomain,
+rails.Container = function(baseUrl, opt_owner, opt_viewer, opt_appId, opt_appTitle, opt_appDomain,
 											opt_instanceId) {
-	  this._baseUrl = baseUrl;
-	  this.people = {
-		'VIEWER': opt_viewer,
-		'OWNER': opt_owner,
-	  };
-	  this.people[opt_owner.getId()] = opt_owner;
-	  this.people[opt_viewer.getId()] = opt_viewer;
-	  this.viewer = opt_viewer;
-	  this.owner = opt_owner;
-	  this.viewerFriends = {};
-	  this.ownerFriends = {};
-	  this.globalAppData = {};
-	  this.instanceAppData = {};
-	  this.personAppData = {};
-	  this.activities = {};
-  
-		this.appId = opt_appId;
-	  this.appTitle = opt_appTitle;
-		this.appDomain = opt_appDomain;
-		
-		this.surface = 'canvas';
-		this.surfaceSupported = ['profile', 'canvas'];
+  this._baseUrl = baseUrl;
+  this.people = {
+	'VIEWER': opt_viewer,
+	'OWNER': opt_owner,
+  };
+  this.people[opt_owner.getId()] = opt_owner;
+  this.people[opt_viewer.getId()] = opt_viewer;
+  this.viewer = opt_viewer;
+  this.owner = opt_owner;
+  this.viewerFriends = {};
+  this.ownerFriends = {};
+  this.globalAppData = {};
+  this.instanceAppData = {};
+  this.personAppData = {};
+  this.activities = {};
+ 
+	this.appId = opt_appId;
+  this.appTitle = opt_appTitle;
+	this.appDomain = opt_appDomain;
 	
-	  this.instanceId = opt_instanceId;
-	}
-});
+	this.surface = new opensocial.Surface('canvas', true);
+	this.surfaceSupported = [new opensocial.Surface('profile', false), new opensocial.Surface('canvas', true)];
+
+  this.instanceId = opt_instanceId;
+};
+rails.Container.inherits(opensocial.Container);
 
 /**
  * Returns the environment for the application
@@ -80,8 +79,25 @@ rails.Container.prototype.getEnvironment = function() {
 	if(this.environment) {
 		return this.environment;
 	} else {
-		return opensocial.Environment(this.appDomain, this.surface, this.surfaceSupported, [])	
+		this.environment = new opensocial.Environment(this.appDomain, this.surface, this.surfaceSupported, []);
+		return this.environment;
 	}
+}
+
+rails.Container.prototype.hasPermission = function() {
+	throw opensocial.ResponseItem.Error.NOT_IMPLEMENTED;
+}
+
+rails.Container.prototype.makeRequest = function(url, callback, opt_params) {
+	throw opensocial.ResponseItem.Error.NOT_IMPLEMENTED;
+}
+
+rails.Container.prototype.requestNavigateTo = function(surface, opt_params) {
+	throw opensocial.ResponseItem.Error.NOT_IMPLEMENTED;
+}
+
+rails.Container.prototype.requestPermission = function(perm, reason, opt_callback) {
+	throw opensocial.ResponseItem.Error.NOT_IMPLEMENTED;
 }
 
 rails.Container.prototype.requestCreateActivity = function(activity,
