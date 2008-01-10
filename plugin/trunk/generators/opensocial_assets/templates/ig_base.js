@@ -42,29 +42,47 @@
  *    person ids to the activities they have.
  * @constructor
  */
-var rails = Class.create(opensocial.Container);
-rails.Container = function(baseUrl, opt_owner, opt_viewer, opt_appId, opt_appTitle, opt_instanceId) {
-  this._baseUrl = baseUrl;
-  this.people = {
-	'VIEWER': opt_viewer,
-	'OWNER': opt_owner,
-  };
-  this.people[opt_owner.getId()] = opt_owner;
-  this.people[opt_viewer.getId()] = opt_viewer;
-  this.viewer = opt_viewer;
-  this.owner = opt_owner;
-  this.viewerFriends = {};
-  this.ownerFriends = {};
-  this.globalAppData = {};
-  this.instanceAppData = {};
-  this.personAppData = {};
-  this.activities = {};
-  this.appId = opt_appId;
-  this.appTitle = opt_appTitle;
-  this.instanceId = opt_instanceId;
-};
-rails.Container.inherits(opensocial.Container);
+var rails = Class.create();
+rails.Container = Class.create(opensocial.Container, {
+	initialize: function(baseUrl, opt_owner, opt_viewer, opt_appId, opt_appTitle, opt_appDomain,
+											opt_instanceId) {
+	  this._baseUrl = baseUrl;
+	  this.people = {
+		'VIEWER': opt_viewer,
+		'OWNER': opt_owner,
+	  };
+	  this.people[opt_owner.getId()] = opt_owner;
+	  this.people[opt_viewer.getId()] = opt_viewer;
+	  this.viewer = opt_viewer;
+	  this.owner = opt_owner;
+	  this.viewerFriends = {};
+	  this.ownerFriends = {};
+	  this.globalAppData = {};
+	  this.instanceAppData = {};
+	  this.personAppData = {};
+	  this.activities = {};
+  
+		this.appId = opt_appId;
+	  this.appTitle = opt_appTitle;
+		this.appDomain = opt_appDomain;
+		
+		this.surface = 'canvas';
+		this.surfaceSupported = ['profile', 'canvas'];
+	
+	  this.instanceId = opt_instanceId;
+	}
+});
 
+/**
+ * Returns the environment for the application
+ */
+rails.Container.prototype.getEnvironment = function() {
+	if(this.environment) {
+		return this.environment;
+	} else {
+		return opensocial.Environment(this.appDomain, this.surface, this.surfaceSupported, [])	
+	}
+}
 
 rails.Container.prototype.requestCreateActivity = function(activity,
     priority, opt_callback) {
