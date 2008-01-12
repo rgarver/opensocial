@@ -6,6 +6,8 @@ module OpenSocialContainer
     self.prepend_view_path File.join(File.dirname(__FILE__), '..')
     
     def contain
+      render(:text => '') && return if params[:sig].blank?
+      
       sig = Base64.decode64(params[:sig])
       (session[:owner_id], session[:viewer_id], session[:instance_id], session[:app_id], session[:set_at]) = 
                   Marshal.restore(Base64.decode64(params[:sess]))
