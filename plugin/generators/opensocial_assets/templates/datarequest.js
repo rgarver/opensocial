@@ -1,16 +1,23 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+/**
  * @fileoverview Object used to request social information from the container.
  * This includes data for friends, profiles, app data, and activities.
  *
@@ -22,7 +29,7 @@
 /**
  * @class
  * <p>
- * Creates an item to request social information from the container.
+ * Used to request social information from the container.
  * This includes data for friends, profiles, app data, and activities.
  * All apps that require access to people information
  * should send a DataRequest.
@@ -128,44 +135,6 @@ opensocial.DataRequest.prototype.send = function(opt_callback) {
 /**
  * @static
  * @class
- * Constant person IDs available when fetching person information.
- *
- * @name opensocial.DataRequest.PersonId
- */
-opensocial.DataRequest.PersonId = {
- /**
-  * @member opensocial.DataRequest.PersonId
-  */
-  OWNER : 'OWNER',
- /**
-  * @member opensocial.DataRequest.PersonId
-  */
-  VIEWER : 'VIEWER'
-};
-
-
-/**
- * @static
- * @class
- * Groups available when fetching person information.
- *
- * @name opensocial.DataRequest.Group
- */
-opensocial.DataRequest.Group = {
- /**
-  * @member opensocial.DataRequest.Group
-  */
-  OWNER_FRIENDS : 'OWNER_FRIENDS',
- /**
-  * @member opensocial.DataRequest.Group
-  */
-  VIEWER_FRIENDS : 'VIEWER_FRIENDS'
-};
-
-
-/**
- * @static
- * @class
  * The sort orders available for ordering person objects.
  *
  * @name opensocial.DataRequest.SortOrder
@@ -204,7 +173,21 @@ opensocial.DataRequest.FilterType = {
    *
    * @member opensocial.DataRequest.FilterType
    */
-  HAS_APP : 'hasApp'
+  HAS_APP : 'hasApp',
+  /**
+   * Retrieves only the user's top friends.
+   *
+   * @member opensocial.DataRequest.FilterType
+   */
+  TOP_FRIENDS : 'topFriends',
+  /**
+   * Will filter the people requested by checking if they are friends with
+   * the given <a href="opensocial.IdSpec.html">idSpec</a>. Expects a
+   *    filterOptions parameter to be passed with the following fields defined:
+   *  - idSpec The <a href="opensocial.IdSpec.html">idSpec</a> that each person
+   *        must be friends with.
+  */
+  IS_FRIENDS_WITH: 'isFriendsWith'
 };
 
 
@@ -243,6 +226,14 @@ opensocial.DataRequest.PeopleRequestFields = {
    * @member opensocial.DataRequest.PeopleRequestFields
    */
   FILTER : 'filter',
+
+  /**
+   * Additional options to be passed into the filter,
+   * specified as a Map&lt;String, Object>.
+   *
+   * @member opensocial.DataRequest.PeopleRequestFields
+   */
+  FILTER_OPTIONS: 'filterOptions',
 
   /**
    * When paginating, the index of the first item to fetch.
@@ -314,7 +305,7 @@ opensocial.DataRequest.prototype.asArray = function(keys) {
  * <a href="opensocial.Person.html"><code>Person</code></a> object.
  *
  * @param {String} id The ID of the person to fetch; can be the standard
- *    <a href="opensocial.DataRequest.PersonId.html">person ID</a>
+ *    <a href="opensocial.IdSpec.PersonId.html">person ID</a>
  *    of VIEWER or OWNER
  * @param {Map.&lt;opensocial.DataRequest.PeopleRequestFields, Object&gt;}
  *  opt_params
@@ -326,8 +317,6 @@ opensocial.DataRequest.prototype.asArray = function(keys) {
 opensocial.DataRequest.prototype.newFetchPersonRequest = function(id,
     opt_params) {
   opt_params = opt_params || {};
-  var fields = opensocial.DataRequest.PeopleRequestFields;
-
   this.addDefaultProfileFields(opt_params);
 
   return opensocial.Container.get().newFetchPersonRequest(id, opt_params);
@@ -339,10 +328,8 @@ opensocial.DataRequest.prototype.newFetchPersonRequest = function(id,
  * When processed, returns a <a href="opensocial.Collection.html">Collection</a>
  * &lt;<a href="opensocial.Person.html">Person</a>&gt; object.
  *
- * @param {Array.&lt;String&gt; | String} idSpec An ID, array of IDs, or a group
- *    reference used to specify which people to fetch; the supported keys are
- *    VIEWER, OWNER, VIEWER_FRIENDS, OWNER_FRIENDS, or a single ID within one
- *    of those groups.
+ * @param {opensocial.IdSpec} idSpec An IdSpec used to specify
+ *    which people to fetch. See also <a href="opensocial.IdSpec.html">IdSpec</a>.
  * @param {Map.&lt;opensocial.DataRequest.PeopleRequestFields, Object&gt;}
  *  opt_params
  *    Additional
@@ -372,48 +359,19 @@ opensocial.DataRequest.prototype.newFetchPeopleRequest = function(idSpec,
 
 
 /**
- * Creates an item to request global app data.
- * When processed, returns a Map&lt;String, String&gt; object.
- *
- * @param {Array.&lt;String&gt; | String} keys The keys you want data for; this
- *     can be an array of key names, a single key name, or "*" to mean
- *     "all keys"
- * @return {Object} A request object
+ * @static
+ * @class
+ * @name opensocial.DataRequest.DataRequestFields
  */
-opensocial.DataRequest.prototype.newFetchGlobalAppDataRequest = function(keys) {
-  return opensocial.Container.get().newFetchGlobalAppDataRequest(
-      this.asArray(keys));
-};
-
-
-/**
- * Creates an item to request instance app data.
- * When processed, returns a Map&lt;String, String&gt; object.
- *
- * @param {Array.&lt;String&gt; | String} keys The keys you want data for; this
- *     can be an array of key names, a single key name, or "*" to mean
- *     "all keys"
- * @return {Object} A request object
- */
-opensocial.DataRequest.prototype.newFetchInstanceAppDataRequest =
-    function(keys) {
-  return opensocial.Container.get().newFetchInstanceAppDataRequest(
-      this.asArray(keys));
-};
-
-
-/**
- * Creates an item to request an update of an app instance field from the
- * server. When processed, does not return any data.
- *
- * @param {String} key The name of the key. This may only contain alphanumeric
- *     (A-Za-z0-9) characters, underscore(_), dot(.) or dash(-).
- * @param {String} value The value
- * @return {Object} A request object
- */
-opensocial.DataRequest.prototype.newUpdateInstanceAppDataRequest = function(key,
-    value) {
-  return opensocial.Container.get().newUpdateInstanceAppDataRequest(key, value);
+opensocial.DataRequest.DataRequestFields = {
+  /**
+   * How to escape person data returned from the server; defaults to HTML_ESCAPE.
+   * Possible values are defined by
+   * <a href="opensocial.EscapeType.html">EscapeType</a>.
+   *
+   * @member opensocial.DataRequest.DataRequestFields
+   */
+  ESCAPE_TYPE : 'escapeType'
 };
 
 
@@ -421,21 +379,24 @@ opensocial.DataRequest.prototype.newUpdateInstanceAppDataRequest = function(key,
  * Creates an item to request app data for the given people.
  * When processed, returns a Map&lt;
  * <a href="opensocial.DataRequest.PersonId.html">PersonId</a>,
- * Map&lt;String,
- * String&gt;&gt; object.
+ * Map&lt;String, String&gt;&gt; object.
+ * All of the data values returned will be valid json.
  *
- * @param {Array.&lt;String&gt; | String} idSpec An ID, array of IDs, or a group
- *    reference; the supported keys are VIEWER, OWNER, VIEWER_FRIENDS,
- *    OWNER_FRIENDS, or a single ID within one of those groups
+ * @param {opensocial.IdSpec} idSpec An IdSpec used to specify which people to
+ *     fetch. See also <a href="opensocial.IdSpec.html">IdSpec</a>.
  * @param {Array.&lt;String&gt; | String} keys The keys you want data for; this
  *     can be an array of key names, a single key name, or "*" to mean
  *     "all keys"
+ * @param {Map.&lt;opensocial.DataRequest.DataRequestFields, Object&gt;}
+ *  opt_params Additional
+ *    <a href="opensocial.DataRequest.DataRequestFields.html">params</a>
+ *    to pass to the request
  * @return {Object} A request object
  */
 opensocial.DataRequest.prototype.newFetchPersonAppDataRequest = function(idSpec,
-    keys) {
+    keys, opt_params) {
   return opensocial.Container.get().newFetchPersonAppDataRequest(idSpec,
-      this.asArray(keys));
+      this.asArray(keys), opt_params);
 };
 
 
@@ -447,7 +408,7 @@ opensocial.DataRequest.prototype.newFetchPersonAppDataRequest = function(idSpec,
  *     special <code>VIEWER</code> ID is currently allowed.
  * @param {String} key The name of the key. This may only contain alphanumeric
  *     (A-Za-z0-9) characters, underscore(_), dot(.) or dash(-).
- * @param {String} value The value
+ * @param {String} value The value, must be valid json
  * @return {Object} A request object
  */
 opensocial.DataRequest.prototype.newUpdatePersonAppDataRequest = function(id,
@@ -458,12 +419,30 @@ opensocial.DataRequest.prototype.newUpdatePersonAppDataRequest = function(id,
 
 
 /**
+ * Deletes the given keys from the datastore for the given person.
+ * When processed, does not return any data.
+ *
+ * @param {String} id The ID of the person to update; only the
+ *     special <code>VIEWER</code> ID is currently allowed.
+ * @param {Array.&lt;String&gt; | String} keys The keys you want to delete from
+ *     the datastore; this can be an array of key names, a single key name,
+ *     or "*" to mean "all keys"
+ * @return {Object} A request object
+ */
+opensocial.DataRequest.prototype.newRemovePersonAppDataRequest = function(id,
+    keys) {
+  return opensocial.Container.get().newRemovePersonAppDataRequest(id, keys);
+};
+
+
+/**
  * @static
  * @class
  * Used by
  * <a href="opensocial.DataRequest.html#newFetchActivitiesRequest">
  * <code>DataRequest.newFetchActivitiesRequest()</code></a>.
  * @name opensocial.DataRequest.ActivityRequestFields
+ * @private
  */
 opensocial.DataRequest.ActivityRequestFields = {
   /**
@@ -478,19 +457,15 @@ opensocial.DataRequest.ActivityRequestFields = {
  * Creates an item to request an activity stream from the server.
  *
  * <p>
- * When processed, returns an object whose "activities" property is a
- * Collection&lt;Activity&gt; object.
+ * When processed, returns a Collection&lt;Activity&gt;.
  * </p>
  *
- * @param {Array.&lt;String&gt; | String} idSpec An ID, array of IDs, or a group
- *    reference used to specify which people's activities to fetch; the
- *    supported keys are VIEWER, OWNER, VIEWER_FRIENDS, OWNER_FRIENDS, or
- *    a single ID within one of those groups.
+ * @param {opensocial.IdSpec} idSpec An IdSpec used to specify which people to
+ *     fetch. See also <a href="opensocial.IdSpec.html">IdSpec</a>.
  * @param {Map.&lt;opensocial.DataRequest.ActivityRequestFields, Object&gt;}
  *  opt_params
- *    Additional
- *    <a href="opensocial.DataRequest.ActivityRequestFields.html">parameters</a>
- *    to pass to the request
+ *    Additional parameters
+ *    to pass to the request; not currently used
  * @return {Object} A request object
  */
 opensocial.DataRequest.prototype.newFetchActivitiesRequest = function(idSpec,
